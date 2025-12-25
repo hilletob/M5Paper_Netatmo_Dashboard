@@ -1,0 +1,23 @@
+#ifndef CONFIG_LOCAL_H
+#define CONFIG_LOCAL_H
+
+// Copy this file to config.local.h and fill in your credentials
+// config.local.h is gitignored and will not be committed
+
+// WiFi Credentials
+#define WIFI_SSID "YourNetworkSSID"
+#define WIFI_PASSWORD "YourWiFiPassword"
+
+// Netatmo API Credentials
+// Get these from https://dev.netatmo.com/
+#define NETATMO_CLIENT_ID "your_client_id_here"
+#define NETATMO_CLIENT_SECRET "your_client_secret_here"
+#define NETATMO_REFRESH_TOKEN "your_refresh_token_here"
+
+// Optional: Override station (default is Davos)
+// #define NETATMO_DEVICE_ID "70:ee:50:15:fc:4e"  // Example: Luzern
+// #define LOCATION_LAT 47.0647
+// #define LOCATION_LON 8.3069
+// #define LOCATION_NAME "Luzern"
+
+#endif  // CONFIG_LOCAL_H
