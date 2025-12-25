@@ -29,7 +29,7 @@ void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
     }
 
     if (icon) {
-        display.drawXBitmap(x, y, icon, ARROW_ICON_WIDTH, ARROW_ICON_HEIGHT, TFT_BLACK);
+        display.drawBitmap(x, y, icon, ARROW_ICON_WIDTH, ARROW_ICON_HEIGHT, TFT_BLACK);
     }
 }
 
@@ -57,7 +57,7 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
         // Center the 48x48 icon in the requested size area
         int offsetX = (size - WEATHER_ICON_WIDTH) / 2;
         int offsetY = (size - WEATHER_ICON_HEIGHT) / 2;
-        display.drawXBitmap(x + offsetX, y + offsetY, icon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, TFT_BLACK);
+        display.drawBitmap(x + offsetX, y + offsetY, icon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, TFT_BLACK);
     }
 }
 
