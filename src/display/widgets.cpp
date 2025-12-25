@@ -10,54 +10,166 @@ void drawCard(TFT_eSprite& display, int x, int y) {
     display.drawRect(x, y, CARD_WIDTH, CARD_HEIGHT, TFT_BLACK);
 }
 
-// Helper to draw trend arrow using MDI bitmap icons
+// Helper to draw trend arrow using geometric shapes
 void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
-    const unsigned char* icon = nullptr;
+    int cx = x + 12;  // Center X
+    int cy = y + 12;  // Center Y
 
     switch (trend) {
         case Trend::UP:
-            icon = mdi_arrow_top_right;
+            // Diagonal arrow pointing up-right (↗)
+            // Shaft
+            display.drawLine(cx - 6, cy + 6, cx + 6, cy - 6, TFT_BLACK);
+            display.drawLine(cx - 5, cy + 6, cx + 6, cy - 5, TFT_BLACK);
+            display.drawLine(cx - 6, cy + 5, cx + 5, cy - 6, TFT_BLACK);
+            // Arrowhead
+            display.fillTriangle(cx + 6, cy - 6,
+                                cx + 6, cy - 2,
+                                cx + 2, cy - 6, TFT_BLACK);
             break;
-        case Trend::DOWN:
-            icon = mdi_arrow_bottom_right;
-            break;
-        case Trend::STABLE:
-            icon = mdi_arrow_right;
-            break;
-        default:
-            return;
-    }
 
-    if (icon) {
-        display.drawBitmap(x, y, icon, ARROW_ICON_WIDTH, ARROW_ICON_HEIGHT, TFT_BLACK);
+        case Trend::DOWN:
+            // Diagonal arrow pointing down-right (↘)
+            // Shaft
+            display.drawLine(cx - 6, cy - 6, cx + 6, cy + 6, TFT_BLACK);
+            display.drawLine(cx - 5, cy - 6, cx + 6, cy + 5, TFT_BLACK);
+            display.drawLine(cx - 6, cy - 5, cx + 5, cy + 6, TFT_BLACK);
+            // Arrowhead
+            display.fillTriangle(cx + 6, cy + 6,
+                                cx + 6, cy + 2,
+                                cx + 2, cy + 6, TFT_BLACK);
+            break;
+
+        case Trend::STABLE:
+            // Horizontal arrow pointing right (→)
+            // Shaft
+            display.drawLine(cx - 8, cy, cx + 6, cy, TFT_BLACK);
+            display.drawLine(cx - 8, cy - 1, cx + 6, cy - 1, TFT_BLACK);
+            display.drawLine(cx - 8, cy + 1, cx + 6, cy + 1, TFT_BLACK);
+            // Arrowhead
+            display.fillTriangle(cx + 6, cy,
+                                cx + 2, cy - 4,
+                                cx + 2, cy + 4, TFT_BLACK);
+            break;
+
+        default:
+            break;
     }
 }
 
 void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, int size) {
-    // Use MDI bitmap weather icons
-    const unsigned char* icon = nullptr;
+    // Center point for the icon
+    int cx = x + size / 2;
+    int cy = y + size / 2;
 
     if (strcmp(iconName, "sunny") == 0) {
-        icon = mdi_weather_sunny;
+        // Sun icon with rays
+        int sunRadius = size / 6;
+        int rayLength = size / 5;
+
+        // Draw sun circle (filled)
+        display.fillCircle(cx, cy, sunRadius, TFT_BLACK);
+
+        // Draw 8 rays around the sun
+        for (int i = 0; i < 8; i++) {
+            float angle = i * PI / 4;
+            int innerX = cx + cos(angle) * (sunRadius + 2);
+            int innerY = cy + sin(angle) * (sunRadius + 2);
+            int outerX = cx + cos(angle) * (sunRadius + rayLength);
+            int outerY = cy + sin(angle) * (sunRadius + rayLength);
+
+            // Draw thick rays
+            display.drawLine(innerX, innerY, outerX, outerY, TFT_BLACK);
+            display.drawLine(innerX + 1, innerY, outerX + 1, outerY, TFT_BLACK);
+            display.drawLine(innerX, innerY + 1, outerX, outerY + 1, TFT_BLACK);
+        }
     }
     else if (strcmp(iconName, "partly_cloudy") == 0) {
-        icon = mdi_weather_partly_cloudy;
+        // Sun behind cloud
+        int sunRadius = size / 8;
+        int sunX = cx - size / 6;
+        int sunY = cy - size / 6;
+
+        // Draw partial sun (upper left)
+        display.drawCircle(sunX, sunY, sunRadius, TFT_BLACK);
+        display.drawCircle(sunX, sunY, sunRadius - 1, TFT_BLACK);
+
+        // Draw 4 sun rays (only visible ones)
+        for (int i = 0; i < 4; i++) {
+            float angle = (i * PI / 2) + PI;  // Left and top rays
+            int innerX = sunX + cos(angle) * (sunRadius + 1);
+            int innerY = sunY + sin(angle) * (sunRadius + 1);
+            int outerX = sunX + cos(angle) * (sunRadius + size / 8);
+            int outerY = sunY + sin(angle) * (sunRadius + size / 8);
+            display.drawLine(innerX, innerY, outerX, outerY, TFT_BLACK);
+        }
+
+        // Draw cloud (overlapping sun)
+        int cloudY = cy + size / 10;
+        // Cloud bumps (3 circles)
+        display.fillCircle(cx - size / 8, cloudY, size / 8, TFT_BLACK);
+        display.fillCircle(cx, cloudY - size / 12, size / 7, TFT_BLACK);
+        display.fillCircle(cx + size / 8, cloudY, size / 8, TFT_BLACK);
+        // Cloud base
+        display.fillRect(cx - size / 6, cloudY, size / 3, size / 8, TFT_BLACK);
     }
     else if (strcmp(iconName, "cloudy") == 0) {
-        icon = mdi_weather_cloudy;
+        // Cloud icon - three bumps
+        int cloudY = cy;
+
+        // Draw three overlapping circles for cloud bumps
+        display.fillCircle(cx - size / 6, cloudY, size / 7, TFT_BLACK);
+        display.fillCircle(cx, cloudY - size / 10, size / 6, TFT_BLACK);
+        display.fillCircle(cx + size / 6, cloudY, size / 7, TFT_BLACK);
+
+        // Cloud base rectangle
+        display.fillRect(cx - size / 5, cloudY, size / 2.5, size / 7, TFT_BLACK);
     }
     else if (strcmp(iconName, "rain") == 0) {
-        icon = mdi_weather_rainy;
+        // Cloud with rain drops
+        int cloudY = cy - size / 8;
+
+        // Draw cloud
+        display.fillCircle(cx - size / 8, cloudY, size / 9, TFT_BLACK);
+        display.fillCircle(cx, cloudY - size / 12, size / 8, TFT_BLACK);
+        display.fillCircle(cx + size / 8, cloudY, size / 9, TFT_BLACK);
+        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, TFT_BLACK);
+
+        // Draw rain drops (5 drops)
+        int dropY = cy + size / 6;
+        for (int i = 0; i < 5; i++) {
+            int dropX = cx - size / 5 + (i * size / 10);
+            // Draw thick rain lines
+            display.drawLine(dropX, dropY, dropX, dropY + size / 8, TFT_BLACK);
+            display.drawLine(dropX + 1, dropY, dropX + 1, dropY + size / 8, TFT_BLACK);
+        }
     }
     else if (strcmp(iconName, "snow") == 0) {
-        icon = mdi_weather_snowy;
-    }
+        // Cloud with snowflakes
+        int cloudY = cy - size / 8;
 
-    if (icon) {
-        // Center the 48x48 icon in the requested size area
-        int offsetX = (size - WEATHER_ICON_WIDTH) / 2;
-        int offsetY = (size - WEATHER_ICON_HEIGHT) / 2;
-        display.drawBitmap(x + offsetX, y + offsetY, icon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, TFT_BLACK);
+        // Draw cloud
+        display.fillCircle(cx - size / 8, cloudY, size / 9, TFT_BLACK);
+        display.fillCircle(cx, cloudY - size / 12, size / 8, TFT_BLACK);
+        display.fillCircle(cx + size / 8, cloudY, size / 9, TFT_BLACK);
+        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, TFT_BLACK);
+
+        // Draw snowflakes (asterisks)
+        int flakeY = cy + size / 6;
+        int flakeSize = size / 12;
+
+        for (int i = 0; i < 3; i++) {
+            int flakeX = cx - size / 6 + (i * size / 6);
+            // Vertical line
+            display.drawLine(flakeX, flakeY - flakeSize, flakeX, flakeY + flakeSize, TFT_BLACK);
+            // Horizontal line
+            display.drawLine(flakeX - flakeSize, flakeY, flakeX + flakeSize, flakeY, TFT_BLACK);
+            // Diagonal lines
+            display.drawLine(flakeX - flakeSize/1.5, flakeY - flakeSize/1.5,
+                           flakeX + flakeSize/1.5, flakeY + flakeSize/1.5, TFT_BLACK);
+            display.drawLine(flakeX - flakeSize/1.5, flakeY + flakeSize/1.5,
+                           flakeX + flakeSize/1.5, flakeY - flakeSize/1.5, TFT_BLACK);
+        }
     }
 }
 
