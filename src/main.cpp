@@ -36,7 +36,7 @@ void disconnectWiFi();
 bool syncTime();
 bool fetchWeatherData(DashboardData& data);
 void updateDisplay(const DashboardData& data);
-void scheduleNextWake();
+void scheduleNextWake(unsigned long netatmoLastUpdate);
 
 void setup() {
     // Initialize serial for debugging
@@ -155,8 +155,8 @@ void setup() {
         display.update();
     }
 
-    // Schedule next wake and enter deep sleep
-    scheduleNextWake();
+    // Schedule next wake and enter deep sleep (pass Netatmo timestamp for smart scheduling)
+    scheduleNextWake(dashboardData.weather.timestamp);
 }
 
 void loop() {
@@ -269,7 +269,7 @@ void updateDisplay(const DashboardData& data) {
     display.sleep();
 }
 
-void scheduleNextWake() {
+void scheduleNextWake(unsigned long netatmoLastUpdate) {
     // Calculate next wake time based on Netatmo update cycle
     // Netatmo updates every 10 minutes, we wake 11 minutes after last update
 
@@ -277,29 +277,24 @@ void scheduleNextWake() {
     unsigned long sleepSeconds = UPDATE_INTERVAL_MIN * 60;  // Fallback: 11 minutes from now
     bool usedNetatmoTimestamp = false;
 
-    // Try to get last Netatmo update time for smart scheduling
-    if (WiFi.status() == WL_CONNECTED) {
-        unsigned long lastUpdate = netatmoClient.getLastUpdateTime();
-        if (lastUpdate > 0) {
-            // Calculate when we should wake up (11 minutes after Netatmo's last update)
-            time_t nextWake = lastUpdate + (UPDATE_INTERVAL_MIN * 60);
+    // Try to use Netatmo's last update timestamp for smart scheduling
+    if (netatmoLastUpdate > 0) {
+        // Calculate when we should wake up (11 minutes after Netatmo's last update)
+        time_t nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60);
 
-            // Only use this if it's in the future
-            if (nextWake > now) {
-                sleepSeconds = nextWake - now;
-                usedNetatmoTimestamp = true;
-                ESP_LOGI("sleep", "Last Netatmo update: %lu (timestamp)", lastUpdate);
-                ESP_LOGI("sleep", "Next wake scheduled for: %lu (11 min after update)", nextWake);
-            } else {
-                ESP_LOGW("sleep", "Netatmo timestamp is in the past (%lu < %lu)", nextWake, now);
-                ESP_LOGI("sleep", "Using fallback: 11 minutes from now");
-            }
+        // Only use this if it's in the future
+        if (nextWake > now) {
+            sleepSeconds = nextWake - now;
+            usedNetatmoTimestamp = true;
+            ESP_LOGI("sleep", "Last Netatmo update: %lu (UTC timestamp)", netatmoLastUpdate);
+            ESP_LOGI("sleep", "Current time: %lu (UTC)", now);
+            ESP_LOGI("sleep", "Next wake scheduled for: %lu (11 min after update)", nextWake);
         } else {
-            ESP_LOGW("sleep", "Could not get Netatmo timestamp");
+            ESP_LOGW("sleep", "Calculated wake time is in the past (next=%lu, now=%lu)", nextWake, now);
             ESP_LOGI("sleep", "Using fallback: 11 minutes from now");
         }
     } else {
-        ESP_LOGW("sleep", "WiFi not connected");
+        ESP_LOGW("sleep", "No Netatmo timestamp available");
         ESP_LOGI("sleep", "Using fallback: 11 minutes from now");
     }
 
