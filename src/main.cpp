@@ -76,10 +76,24 @@ void setup() {
         display.fillScreen(TFT_WHITE);
 
         display.setTextColor(TFT_BLACK, TFT_WHITE);
-        display.setTextDatum(TL_DATUM);  // Top-left
-        display.drawString("Waking up...", 50, 150, FONT_MEDIUM);
-        display.drawString("Consulting the weather gods", 50, 200, FONT_SMALL);
-        display.drawString("(This may take a moment)", 50, 250, FONT_SMALL);
+        display.setTextDatum(MC_DATUM);  // Middle-center for centered text
+
+        // Title - Large and bold
+        display.setFreeFont(FSSB24);  // FreeSans Bold 24pt
+        display.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
+
+        // Subtitle - Medium
+        display.setFreeFont(FSS18);  // FreeSans 18pt
+        display.drawString("Grialetschhüsli, Davos", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
+
+        // Status - Small
+        display.setFreeFont(FSS12);  // FreeSans 12pt
+        display.drawString("Daten werden geladen...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
+
+        // Info - Tiny
+        display.setFreeFont(FSS9);  // FreeSans 9pt
+        display.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
+
         display.update();
 
         delay(1000);
@@ -149,9 +163,17 @@ void setup() {
         display.fillScreen(TFT_WHITE);
         display.setTextColor(TFT_BLACK, TFT_WHITE);
         display.setTextDatum(MC_DATUM);
-        display.drawString("ERROR", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 40, FONT_LARGE);
-        display.drawString("No data available", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 20, FONT_MEDIUM);
-        display.drawString("Check WiFi and API", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50, FONT_SMALL);
+
+        // Error message with FreeFonts
+        display.setFreeFont(FSSB24);  // Large bold
+        display.drawString("FEHLER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50);
+
+        display.setFreeFont(FSS18);  // Medium
+        display.drawString("Keine Daten verfügbar", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 10);
+
+        display.setFreeFont(FSS12);  // Small
+        display.drawString("WiFi und API prüfen", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
+
         display.update();
     }
 
