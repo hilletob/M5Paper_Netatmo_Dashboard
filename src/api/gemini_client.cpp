@@ -27,6 +27,7 @@ String GeminiClient::buildPrompt(const WeatherData& weather, unsigned long times
     prompt += "- Der Timestamp darf fuer zeitbezogene Vermutungen genutzt werden (Morgen, Mittag, Abend)\n";
     prompt += "- Der Timestamp darf fuer Jahreszeitliche Vermutungen genutzt werden (Winter, Frühling, Sommer, Herbst)\n";
     prompt += "- Der Timestamp darf fuer Vermutungen bezüglich Feiertagen genutzt werden\n";
+    prompt += "- Falls die Luftqualität über 1500 ppm CO2 ist, kannst du manchmal erwähnen dass der Vater am Lüften ist\n";
     prompt += "- Keine Zahlen wiederholen, keine Aufzaehlungen\n";
     prompt += "- Keine Empfehlungen oder Anweisungen\n\n";
 

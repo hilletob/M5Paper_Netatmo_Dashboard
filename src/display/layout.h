@@ -16,7 +16,14 @@
 
 // Three-column card grid (3 × 256px)
 #define CARD_WIDTH 256
-#define CARD_HEIGHT 95
+#define CARD_HEIGHT 95  // Default card height
+
+// Individual card heights
+#define TEMP_CARD_HEIGHT 115       // Temperature cards (with min/max times)
+#define HUMID_CARD_HEIGHT 95       // Humidity cards
+#define AIR_QUALITY_CARD_HEIGHT 80 // CO2 card (no quality label)
+#define PRESSURE_CARD_HEIGHT 80    // Pressure card (no trend label)
+#define AI_CARD_HEIGHT 175         // AI commentary card
 
 // Column positions
 // Math check: 8 + 256 + 8 + 256 + 8 + 256 + 8 = 800 ✓
@@ -28,11 +35,12 @@
 #define FORECAST_COL_WIDTH CARD_WIDTH
 #define FORECAST_COL_HEIGHT 422  // SCREEN_HEIGHT - HEADER_HEIGHT - MARGIN - STATUS_BAR_HEIGHT - MARGIN
 
-// Card vertical positions (4 rows of cards)
-#define ROW1_Y (HEADER_HEIGHT + MARGIN)         // 53
-#define ROW2_Y (ROW1_Y + CARD_HEIGHT + CARD_SPACING)  // 156
-#define ROW3_Y (ROW2_Y + CARD_HEIGHT + CARD_SPACING)  // 259
-#define ROW4_Y (ROW3_Y + CARD_HEIGHT + CARD_SPACING)  // 362
+// Card vertical positions - calculated per column
+// Column 1 & 2 rows (adjusted for different card heights)
+#define ROW1_Y (HEADER_HEIGHT + MARGIN)                              // 53
+#define ROW2_Y (ROW1_Y + TEMP_CARD_HEIGHT + CARD_SPACING)           // 176 (53+115+8)
+#define ROW3_Y (ROW2_Y + HUMID_CARD_HEIGHT + CARD_SPACING)          // 279 (176+95+8)
+#define ROW4_Y (ROW3_Y + AIR_QUALITY_CARD_HEIGHT + CARD_SPACING)    // 367 (279+80+8)
 
 // Card internal layout (adjusted for narrower 256px cards)
 #define CARD_PADDING 6

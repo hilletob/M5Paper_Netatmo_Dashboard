@@ -86,11 +86,11 @@ void setup() {
 
         // Subtitle - Medium
         display.setFreeFont(FSS18);  // FreeSans 18pt
-        display.drawString("Grialetschhüsli, Davos", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
+        display.drawString("Davos", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
 
         // Status - Small
         display.setFreeFont(FSS12);  // FreeSans 12pt
-        display.drawString("Daten werden geladen...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
+        display.drawString("Wettergoetter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
 
         // Info - Tiny
         display.setFreeFont(FSS9);  // FreeSans 9pt

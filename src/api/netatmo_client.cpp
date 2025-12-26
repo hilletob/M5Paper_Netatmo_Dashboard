@@ -1,5 +1,6 @@
 #include "netatmo_client.h"
 #include "http_utils.h"
+#include <time.h>
 
 NetatmoClient::NetatmoClient() : accessToken(""), tokenExpiry(0) {
 }
@@ -80,19 +81,15 @@ void NetatmoClient::parseIndoorData(JsonObject device, IndoorData& indoor) {
     // Parse trends
     const char* tempTrend = dashboard["temp_trend"] | "unknown";
     const char* pressTrend = dashboard["pressure_trend"] | "unknown";
-    const char* co2Trend = dashboard["co2_trend"];
 
     indoor.temperatureTrend = stringToTrend(tempTrend);
     indoor.pressureTrend = stringToTrend(pressTrend);
 
-    // CO2 trend is not provided by Netatmo API, default to STABLE
-    if (co2Trend && strlen(co2Trend) > 0) {
-        indoor.co2Trend = stringToTrend(co2Trend);
-        ESP_LOGD("netatmo", "Trends - Temp: %s, Pressure: %s, CO2: %s", tempTrend, pressTrend, co2Trend);
-    } else {
-        indoor.co2Trend = Trend::STABLE;
-        ESP_LOGD("netatmo", "Trends - Temp: %s, Pressure: %s, CO2: stable (not provided by API)", tempTrend, pressTrend);
-    }
+    // CO2 trend is not provided by Netatmo API - calculate from historical data
+    indoor.co2Trend = calculateCO2Trend(indoor.co2);
+
+    ESP_LOGD("netatmo", "Trends - Temp: %s, Pressure: %s, CO2: calculated from history",
+            tempTrend, pressTrend);
 
     // Parse min/max temperatures
     indoor.minTemp = dashboard["min_temp"] | 0.0f;
@@ -294,9 +291,67 @@ unsigned long NetatmoClient::getLastUpdateTime() {
     return timestamp;
 }
 
-Trend NetatmoClient::calculateCO2Trend(const char* deviceId, const char* moduleId) {
-    // This would require calling the getmeasure API with historical data
-    // For simplicity in this implementation, we return STABLE
-    // A full implementation would fetch last 3 hours of CO2 data and calculate slope
-    return Trend::STABLE;
+Trend NetatmoClient::calculateCO2Trend(int currentCO2) {
+    ESP_LOGI("netatmo", "Calculating CO2 trend (current: %d ppm)", currentCO2);
+
+    // Build URL for getmeasure API
+    // Get CO2 measurement from 10 minutes ago (previous Netatmo measurement)
+    time_t now = time(nullptr);
+    time_t tenMinutesAgo = now - 600;  // 10 minutes = 600 seconds
+
+    String url = "https://api.netatmo.com/api/getmeasure";
+    url += "?device_id=";
+    url += NETATMO_DEVICE_ID;
+    url += "&scale=max";  // Get max value in the time range
+    url += "&type=CO2";
+    url += "&date_begin=";
+    url += String(tenMinutesAgo - 300);  // 5 minute window before
+    url += "&date_end=";
+    url += String(tenMinutesAgo + 300);  // 5 minute window after (total 10 min window)
+    url += "&limit=1";  // Only need one measurement
+
+    // Make API request
+    JsonDocument doc;
+    if (!HTTPUtils::httpGetJSONWithRetry(url.c_str(), doc, accessToken.c_str())) {
+        ESP_LOGW("netatmo", "Failed to fetch historical CO2 data, defaulting to STABLE");
+        return Trend::STABLE;
+    }
+
+    // Parse response
+    // Response format: {"body":[{"beg_time":timestamp,"value":[[CO2value]]}],"status":"ok","time_exec":0.123}
+    JsonArray body = doc["body"];
+    if (!body || body.size() == 0) {
+        ESP_LOGW("netatmo", "No historical CO2 data in response, defaulting to STABLE");
+        return Trend::STABLE;
+    }
+
+    JsonObject measurement = body[0];
+    JsonArray values = measurement["value"];
+    if (!values || values.size() == 0) {
+        ESP_LOGW("netatmo", "No CO2 values in measurement, defaulting to STABLE");
+        return Trend::STABLE;
+    }
+
+    JsonArray co2Array = values[0];
+    if (!co2Array || co2Array.size() == 0) {
+        ESP_LOGW("netatmo", "Empty CO2 array, defaulting to STABLE");
+        return Trend::STABLE;
+    }
+
+    int previousCO2 = co2Array[0] | 0;
+
+    // Calculate trend based on difference
+    // Threshold: >30 ppm change over 10 minutes is significant for CO2
+    int diff = currentCO2 - previousCO2;
+
+    ESP_LOGI("netatmo", "CO2 trend: current %d ppm, 10min ago %d ppm, diff %+d ppm",
+            currentCO2, previousCO2, diff);
+
+    if (diff > 30) {
+        return Trend::UP;
+    } else if (diff < -30) {
+        return Trend::DOWN;
+    } else {
+        return Trend::STABLE;
+    }
 }

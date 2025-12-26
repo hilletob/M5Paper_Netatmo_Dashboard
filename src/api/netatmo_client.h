@@ -41,8 +41,8 @@ public:
     // Get the last update timestamp from Netatmo station
     unsigned long getLastUpdateTime();
 
-    // Calculate CO2 trend from historical data (past 3 hours)
-    Trend calculateCO2Trend(const char* deviceId, const char* moduleId);
+    // Calculate CO2 trend from historical data (comparing current to 10 minutes ago)
+    Trend calculateCO2Trend(int currentCO2);
 };
 
 #endif  // NETATMO_CLIENT_H

@@ -10,6 +10,17 @@ void drawCard(TFT_eSprite& display, int x, int y) {
     display.drawRect(x, y, CARD_WIDTH, CARD_HEIGHT, TFT_BLACK);
 }
 
+// Helper to format timestamp as time (HH:MM)
+void formatTime(unsigned long timestamp, char* buffer, size_t bufferSize) {
+    if (timestamp == 0) {
+        snprintf(buffer, bufferSize, "--:--");
+        return;
+    }
+    time_t t = timestamp;
+    struct tm* tm = localtime(&t);
+    snprintf(buffer, bufferSize, "%02d:%02d", tm->tm_hour, tm->tm_min);
+}
+
 // Helper to draw temperature with degree symbol (drawn as circle)
 void drawTemperature(TFT_eSprite& display, float temp, int16_t x, int16_t y,
                      const GFXfont* valueFont, const GFXfont* unitFont, uint8_t datum) {
@@ -227,7 +238,7 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
 void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    drawCard(display, INDOOR_TEMP_X, INDOOR_TEMP_Y);
+    display.drawRect(INDOOR_TEMP_X, INDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, TFT_BLACK);
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
 
@@ -245,49 +256,72 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
-    // Min/max detail with custom degree symbols
+    // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
         display.setFreeFont(FSS9);
-        int x = INDOOR_TEMP_X + CARD_PADDING;
         int y = INDOOR_TEMP_Y + CARD_DETAIL_Y;
+        int pipeX = INDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
-        // Draw "min "
-        display.drawString("min ", x, y);
-        x += display.textWidth("min ");
+        // Line 1: min
+        int x = INDOOR_TEMP_X + CARD_PADDING;
+        display.setFreeFont(FSS9);
+        display.drawString("min  ", x, y);
+        x += display.textWidth("min  ");
 
-        // Draw min temperature with degree symbol
+        // Temperature value in bold
+        display.setFreeFont(FSSB9);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
-        // Draw degree symbol (circle)
+        // Degree symbol
         display.drawCircle(x, y + 3, 2, TFT_BLACK);
         display.drawCircle(x, y + 3, 3, TFT_BLACK);
         x += 5;
 
-        // Draw "C  max "
-        display.drawString("C  max ", x, y);
-        x += display.textWidth("C  max ");
+        display.setFreeFont(FSS9);
+        display.drawString("C  ", x, y);
+        x += display.textWidth("C  ");
 
-        // Draw max temperature with degree symbol
+        // Min time
+        char timeStr[16];
+        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
+        display.drawString(timeStr, x, y);
+        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+
+        // Line 2: max
+        y += 18;  // Move to next line
+        x = INDOOR_TEMP_X + CARD_PADDING;
+        display.setFreeFont(FSS9);
+        display.drawString("max  ", x, y);
+        x += display.textWidth("max  ");
+
+        // Temperature value in bold
+        display.setFreeFont(FSSB9);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
-        // Draw degree symbol (circle)
+        // Degree symbol
         display.drawCircle(x, y + 3, 2, TFT_BLACK);
         display.drawCircle(x, y + 3, 3, TFT_BLACK);
         x += 5;
 
-        // Draw "C"
-        display.drawString("C", x, y);
+        display.setFreeFont(FSS9);
+        display.drawString("C  ", x, y);
+        x += display.textWidth("C  ");
+
+        // Max time
+        formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
+        display.drawString(timeStr, x, y);
+        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
     }
 }
 
 void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
-    drawCard(display, OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y);
+    display.drawRect(OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, TFT_BLACK);
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
@@ -307,44 +341,67 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
-    // Min/max detail with custom degree symbols
+    // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
         display.setFreeFont(FSS9);
-        int x = OUTDOOR_TEMP_X + CARD_PADDING;
         int y = OUTDOOR_TEMP_Y + CARD_DETAIL_Y;
+        int pipeX = OUTDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
-        // Draw "min "
-        display.drawString("min ", x, y);
-        x += display.textWidth("min ");
+        // Line 1: min
+        int x = OUTDOOR_TEMP_X + CARD_PADDING;
+        display.setFreeFont(FSS9);
+        display.drawString("min  ", x, y);
+        x += display.textWidth("min  ");
 
-        // Draw min temperature with degree symbol
+        // Temperature value in bold
+        display.setFreeFont(FSSB9);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
-        // Draw degree symbol (circle)
+        // Degree symbol
         display.drawCircle(x, y + 3, 2, TFT_BLACK);
         display.drawCircle(x, y + 3, 3, TFT_BLACK);
         x += 5;
 
-        // Draw "C  max "
-        display.drawString("C  max ", x, y);
-        x += display.textWidth("C  max ");
+        display.setFreeFont(FSS9);
+        display.drawString("C  ", x, y);
+        x += display.textWidth("C  ");
 
-        // Draw max temperature with degree symbol
+        // Min time
+        char timeStr[16];
+        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
+        display.drawString(timeStr, x, y);
+        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+
+        // Line 2: max
+        y += 18;  // Move to next line
+        x = OUTDOOR_TEMP_X + CARD_PADDING;
+        display.setFreeFont(FSS9);
+        display.drawString("max  ", x, y);
+        x += display.textWidth("max  ");
+
+        // Temperature value in bold
+        display.setFreeFont(FSSB9);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
-        // Draw degree symbol (circle)
+        // Degree symbol
         display.drawCircle(x, y + 3, 2, TFT_BLACK);
         display.drawCircle(x, y + 3, 3, TFT_BLACK);
         x += 5;
 
-        // Draw "C"
-        display.drawString("C", x, y);
+        display.setFreeFont(FSS9);
+        display.drawString("C  ", x, y);
+        x += display.textWidth("C  ");
+
+        // Max time
+        formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
+        display.drawString(timeStr, x, y);
+        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
     }
 }
 
@@ -427,7 +484,7 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
 void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    drawCard(display, AIR_QUALITY_X, AIR_QUALITY_Y);
+    display.drawRect(AIR_QUALITY_X, AIR_QUALITY_Y, CARD_WIDTH, AIR_QUALITY_CARD_HEIGHT, TFT_BLACK);
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
@@ -441,23 +498,17 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
-
-    // CO2 quality status
-    const char* quality = getCO2Quality(data.co2);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-    display.drawString(quality, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_DETAIL_Y);
 }
 
 void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    drawCard(display, PRESSURE_X, PRESSURE_Y);
+    display.drawRect(PRESSURE_X, PRESSURE_Y, CARD_WIDTH, PRESSURE_CARD_HEIGHT, TFT_BLACK);
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSS9);
-    display.drawString("Luftdruck außen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
+    display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     char pressStr[16];
     snprintf(pressStr, sizeof(pressStr), "%d hPa", data.pressure);
@@ -466,13 +517,6 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
-
-    // Trend label
-    const char* trendLabel = (data.pressureTrend == Trend::UP) ? "Trend: Steigend" :
-                             (data.pressureTrend == Trend::DOWN) ? "Trend: Fallend" : "Trend: Stabil";
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-    display.drawString(trendLabel, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_DETAIL_Y);
 }
 
 // Legacy forecast widgets (deprecated - now using 3-day forecast column)
@@ -486,15 +530,14 @@ void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
 }
 
 void drawAIWidget(TFT_eSprite& display, const String& commentary) {
-    // Position: WIND_X=272, WIND_Y=259
-    // Size: 256px × 198px (2 rows + spacing)
-    int cardHeight = 198;
-    display.drawRect(WIND_X, WIND_Y, CARD_WIDTH, cardHeight, TFT_BLACK);
+    // Position: WIND_X=272, WIND_Y=279
+    // Size: 256px × 175px
+    display.drawRect(WIND_X, WIND_Y, CARD_WIDTH, AI_CARD_HEIGHT, TFT_BLACK);
 
     // Empty widget if no commentary
     if (commentary.length() == 0) return;
 
-    // Text area: 244px wide × 178px high (no label, starts from top)
+    // Text area: 244px wide × ~160px high (no label, starts from top)
     int textX = WIND_X + CARD_PADDING;
     int textY = WIND_Y + CARD_PADDING + 8;  // Start near top of widget
 
@@ -508,7 +551,7 @@ void drawAIWidget(TFT_eSprite& display, const String& commentary) {
     String remaining = commentary;
     int currentY = textY;
 
-    while (remaining.length() > 0 && currentY + lineHeight < WIND_Y + cardHeight - 6) {
+    while (remaining.length() > 0 && currentY + lineHeight < WIND_Y + AI_CARD_HEIGHT - 6) {
         // Find longest substring that fits in maxWidth
         int fitLength = remaining.length();
         for (int i = 1; i <= remaining.length(); i++) {
