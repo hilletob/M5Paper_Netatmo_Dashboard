@@ -78,14 +78,16 @@
 // API Endpoints
 #define NETATMO_TOKEN_URL "https://api.netatmo.com/oauth2/token"
 #define NETATMO_WEATHER_URL "https://api.netatmo.com/api/getstationsdata"
-#define METEO_FORECAST_URL "https://api.open-meteo.com/v1/forecast"
+#define METEO_FORECAST_URL "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 
 // HTTP Configuration
 #ifndef HTTP_TIMEOUT_MS
-#define HTTP_TIMEOUT_MS 15000  // 15 seconds
+#define HTTP_TIMEOUT_MS 20000  // 20 seconds (met.no can be slower)
 #endif
 #ifndef HTTP_USER_AGENT
-#define HTTP_USER_AGENT "ESP32-WeatherDashboard/1.0"
+// CRITICAL: met.no requires User-Agent with contact info, otherwise 403 Forbidden!
+// Override this in config.local.h with your actual email
+#define HTTP_USER_AGENT "ESP32-Davos-WeatherDashboard/2.0 (github.com/yourusername/esp32netatmo)"
 #endif
 
 // Cache Configuration

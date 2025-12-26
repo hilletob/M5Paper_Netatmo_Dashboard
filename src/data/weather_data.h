@@ -100,11 +100,41 @@ struct ForecastPoint {
                      windDirection(0), valid(false) {}
 };
 
-// MeteoSwiss forecast data
+// Day-time forecast point (3 times per day: morning, noon, evening)
+struct DayTimeForecast {
+    uint8_t hour;              // 6, 12, or 18 (local time)
+    int8_t temperature;        // °C
+    uint8_t symbolCode;        // Symbol code enum index (0=sunny, 1=partly_cloudy, 2=cloudy, 3=rain, 4=snow)
+    uint8_t precipitationMm;   // mm (0-255)
+
+    DayTimeForecast() : hour(0), temperature(0), symbolCode(0), precipitationMm(0) {}
+};
+
+// Legacy alias for backward compatibility
+typedef DayTimeForecast HourlyForecast;
+
+// Daily forecast summary with day-time breakdown
+struct DailyForecast {
+    unsigned long date;        // Unix timestamp (midnight UTC)
+    int8_t tempMin;            // °C
+    int8_t tempMax;            // °C
+    uint8_t symbolCode;        // Dominant weather symbol for the day
+    uint8_t precipSum;         // Total precipitation 24h (mm)
+    uint8_t windSpeedMax;      // Max wind speed km/h
+    uint16_t windDirection;    // Wind direction (degrees)
+    DayTimeForecast times[3];  // 3 times per day: 06:00, 12:00, 18:00
+    bool valid;                // Data validity flag
+
+    DailyForecast() : date(0), tempMin(0), tempMax(0), symbolCode(0),
+                     precipSum(0), windSpeedMax(0), windDirection(0), valid(false) {}
+};
+
+// Extended forecast data (met.no API)
 struct ForecastData {
-    ForecastPoint current;      // Current conditions
-    ForecastPoint forecast3h;   // +3 hours forecast
-    ForecastPoint forecast6h;   // +6 hours forecast
+    ForecastPoint current;      // Current conditions (for backward compatibility)
+    ForecastPoint forecast3h;   // +3 hours (deprecated, kept for compatibility)
+    ForecastPoint forecast6h;   // +6 hours (deprecated, kept for compatibility)
+    DailyForecast days[3];      // 3-day forecast from met.no
 
     ForecastData() {}
 };
@@ -154,6 +184,18 @@ inline const char* getHumidityComfort(uint8_t humidity) {
     if (humidity <= 60) return "Optimal";
     if (humidity <= 70) return "Feucht";
     return "Zu feucht";
+}
+
+// Helper function to convert symbol code enum to icon name
+inline const char* getIconFromCode(uint8_t symbolCode) {
+    switch (symbolCode) {
+        case 0: return "sunny";
+        case 1: return "partly_cloudy";
+        case 2: return "cloudy";
+        case 3: return "rain";
+        case 4: return "snow";
+        default: return "cloudy";
+    }
 }
 
 #endif  // WEATHER_DATA_H

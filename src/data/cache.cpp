@@ -66,6 +66,30 @@ bool DataCache::save(const DashboardData& data) {
     f6h["precip"] = data.forecast.forecast6h.precipitation;
     f6h["valid"] = data.forecast.forecast6h.valid;
 
+    // 3-day forecast (met.no)
+    JsonArray days = doc["days"].to<JsonArray>();
+    for (int i = 0; i < 3; i++) {
+        JsonObject day = days.add<JsonObject>();
+        day["date"] = data.forecast.days[i].date;
+        day["tempMin"] = data.forecast.days[i].tempMin;
+        day["tempMax"] = data.forecast.days[i].tempMax;
+        day["symbol"] = data.forecast.days[i].symbolCode;
+        day["precipSum"] = data.forecast.days[i].precipSum;
+        day["windMax"] = data.forecast.days[i].windSpeedMax;
+        day["windDir"] = data.forecast.days[i].windDirection;
+        day["valid"] = data.forecast.days[i].valid;
+
+        // Day-time forecast (3 times: 06:00, 12:00, 18:00)
+        JsonArray times = day["times"].to<JsonArray>();
+        for (int t = 0; t < 3; t++) {
+            JsonObject time = times.add<JsonObject>();
+            time["h"] = data.forecast.days[i].times[t].hour;
+            time["t"] = data.forecast.days[i].times[t].temperature;
+            time["s"] = data.forecast.days[i].times[t].symbolCode;
+            time["p"] = data.forecast.days[i].times[t].precipitationMm;
+        }
+    }
+
     // Battery
     doc["batteryMv"] = data.batteryVoltage;
     doc["batteryPct"] = data.batteryPercent;
@@ -168,6 +192,34 @@ bool DataCache::load(DashboardData& data) {
     data.forecast.forecast6h.weatherCode = f6h["code"] | 0;
     data.forecast.forecast6h.precipitation = f6h["precip"] | 0.0f;
     data.forecast.forecast6h.valid = f6h["valid"] | false;
+
+    // 3-day forecast (met.no)
+    JsonArray days = doc["days"];
+    if (days) {
+        for (int i = 0; i < 3 && i < days.size(); i++) {
+            JsonObject day = days[i];
+            data.forecast.days[i].date = day["date"] | 0;
+            data.forecast.days[i].tempMin = day["tempMin"] | 0;
+            data.forecast.days[i].tempMax = day["tempMax"] | 0;
+            data.forecast.days[i].symbolCode = day["symbol"] | 0;
+            data.forecast.days[i].precipSum = day["precipSum"] | 0;
+            data.forecast.days[i].windSpeedMax = day["windMax"] | 0;
+            data.forecast.days[i].windDirection = day["windDir"] | 0;
+            data.forecast.days[i].valid = day["valid"] | false;
+
+            // Day-time forecast (3 times: 06:00, 12:00, 18:00)
+            JsonArray times = day["times"];
+            if (times) {
+                for (int t = 0; t < 3 && t < times.size(); t++) {
+                    JsonObject time = times[t];
+                    data.forecast.days[i].times[t].hour = time["h"] | 0;
+                    data.forecast.days[i].times[t].temperature = time["t"] | 0;
+                    data.forecast.days[i].times[t].symbolCode = time["s"] | 0;
+                    data.forecast.days[i].times[t].precipitationMm = time["p"] | 0;
+                }
+            }
+        }
+    }
 
     // Battery
     data.batteryVoltage = doc["batteryMv"] | 0;

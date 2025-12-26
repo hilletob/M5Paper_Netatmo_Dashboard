@@ -181,7 +181,8 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
     // Location on left
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString(location, MARGIN, HEADER_Y + 8, FONT_MEDIUM);
+    display.setFreeFont(FSS12);
+    display.drawString(location, MARGIN, HEADER_Y + 8);
 
     // Date/time on right
     if (timestamp > 0) {
@@ -192,7 +193,8 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
                 tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900,
                 tm->tm_hour, tm->tm_min);
         display.setTextDatum(TR_DATUM);
-        display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 8, FONT_SMALL);
+        display.setFreeFont(FSS9);
+        display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 8);
     }
 }
 
@@ -205,16 +207,19 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
 
     // Label
     display.setTextDatum(TL_DATUM);
-    display.drawString("Innen", INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Innen", INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_LABEL_Y);
 
     // Large temperature value
     char tempStr[16];
     snprintf(tempStr, sizeof(tempStr), "%.1f", data.temperature);
     display.setTextDatum(TL_DATUM);
-    display.drawString(tempStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_VALUE_Y, FONT_LARGE);
+    display.setFreeFont(FSSB18);
+    display.drawString(tempStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_VALUE_Y);
 
     // Unit (positioned further right)
-    display.drawString("C", INDOOR_TEMP_X + 160, INDOOR_TEMP_Y + CARD_VALUE_Y + 10, FONT_MEDIUM);
+    display.setFreeFont(FSS12);
+    display.drawString("°C", INDOOR_TEMP_X + 160, INDOOR_TEMP_Y + CARD_VALUE_Y + 10);
 
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
@@ -222,9 +227,10 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     // Min/max detail
     if (data.minTemp != 0 || data.maxTemp != 0) {
         char detailStr[64];
-        snprintf(detailStr, sizeof(detailStr), "min %.1fC  max %.1fC", data.minTemp, data.maxTemp);
+        snprintf(detailStr, sizeof(detailStr), "min %.1f°C  max %.1f°C", data.minTemp, data.maxTemp);
         display.setTextDatum(TL_DATUM);
-        display.drawString(detailStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_DETAIL_Y, FONT_TINY);
+        display.setFreeFont(FSS9);
+        display.drawString(detailStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_DETAIL_Y);
     }
 }
 
@@ -233,26 +239,31 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Aussen", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Aussen", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
-        display.drawString("n/a", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y, FONT_LARGE);
+        display.setFreeFont(FSSB18);
+        display.drawString("n/a", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y);
         return;
     }
 
     char tempStr[16];
     snprintf(tempStr, sizeof(tempStr), "%.1f", data.temperature);
     display.setTextDatum(TL_DATUM);
-    display.drawString(tempStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y, FONT_LARGE);
-    display.drawString("C", OUTDOOR_TEMP_X + 160, OUTDOOR_TEMP_Y + CARD_VALUE_Y + 10, FONT_MEDIUM);
+    display.setFreeFont(FSSB18);
+    display.drawString(tempStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS12);
+    display.drawString("°C", OUTDOOR_TEMP_X + 160, OUTDOOR_TEMP_Y + CARD_VALUE_Y + 10);
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
     if (data.minTemp != 0 || data.maxTemp != 0) {
         char detailStr[64];
-        snprintf(detailStr, sizeof(detailStr), "min %.1fC  max %.1fC", data.minTemp, data.maxTemp);
+        snprintf(detailStr, sizeof(detailStr), "min %.1f°C  max %.1f°C", data.minTemp, data.maxTemp);
         display.setTextDatum(TL_DATUM);
-        display.drawString(detailStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_DETAIL_Y, FONT_TINY);
+        display.setFreeFont(FSS9);
+        display.drawString(detailStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_DETAIL_Y);
     }
 }
 
@@ -263,20 +274,24 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
     char humidStr[16];
     snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
-    display.drawString(humidStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_VALUE_Y, FONT_LARGE);
-    display.drawString("%", INDOOR_HUMID_X + 140, INDOOR_HUMID_Y + CARD_VALUE_Y + 10, FONT_MEDIUM);
+    display.setFreeFont(FSSB18);
+    display.drawString(humidStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS12);
+    display.drawString("%", INDOOR_HUMID_X + 140, INDOOR_HUMID_Y + CARD_VALUE_Y + 10);
 
     // Climate status
     const char* status = getHumidityComfort(data.humidity);
     char detailStr[32];
     snprintf(detailStr, sizeof(detailStr), "Raumklima: %s", status);
     display.setTextDatum(TL_DATUM);
-    display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y, FONT_TINY);
+    display.setFreeFont(FSS9);
+    display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y);
 }
 
 void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
@@ -284,18 +299,22 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Aussen", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Aussen", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
-        display.drawString("n/a", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y, FONT_LARGE);
+        display.setFreeFont(FSSB18);
+        display.drawString("n/a", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
         return;
     }
 
     char humidStr[16];
     snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
-    display.drawString(humidStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y, FONT_LARGE);
-    display.drawString("%", OUTDOOR_HUMID_X + 140, OUTDOOR_HUMID_Y + CARD_VALUE_Y + 10, FONT_MEDIUM);
+    display.setFreeFont(FSSB18);
+    display.drawString(humidStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS12);
+    display.drawString("%", OUTDOOR_HUMID_X + 140, OUTDOOR_HUMID_Y + CARD_VALUE_Y + 10);
 
     // Dew point calculation (Magnus formula)
     float a = 17.27;
@@ -304,9 +323,10 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     float dewPoint = (b * alpha) / (a - alpha);
 
     char detailStr[32];
-    snprintf(detailStr, sizeof(detailStr), "Taupunkt: %.1fC", dewPoint);
+    snprintf(detailStr, sizeof(detailStr), "Taupunkt: %.1f°C", dewPoint);
     display.setTextDatum(TL_DATUM);
-    display.drawString(detailStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_DETAIL_Y, FONT_TINY);
+    display.setFreeFont(FSS9);
+    display.drawString(detailStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_DETAIL_Y);
 }
 
 void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
@@ -316,20 +336,24 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Luftqualitat innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
     char co2Str[16];
     snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
     display.setTextDatum(TL_DATUM);
-    display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y, FONT_LARGE);
-    display.drawString("ppm", AIR_QUALITY_X + 180, AIR_QUALITY_Y + CARD_VALUE_Y + 10, FONT_SMALL);
+    display.setFreeFont(FSSB18);
+    display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS9);
+    display.drawString("ppm", AIR_QUALITY_X + 180, AIR_QUALITY_Y + CARD_VALUE_Y + 10);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 
     // CO2 quality status
     const char* quality = getCO2Quality(data.co2);
     display.setTextDatum(TL_DATUM);
-    display.drawString(quality, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_DETAIL_Y, FONT_TINY);
+    display.setFreeFont(FSS9);
+    display.drawString(quality, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_DETAIL_Y);
 }
 
 void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
@@ -339,13 +363,16 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Luftdruck außen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     char pressStr[16];
     snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
     display.setTextDatum(TL_DATUM);
-    display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y, FONT_LARGE);
-    display.drawString("hPa", PRESSURE_X + 180, PRESSURE_Y + CARD_VALUE_Y + 10, FONT_SMALL);
+    display.setFreeFont(FSSB18);
+    display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS9);
+    display.drawString("hPa", PRESSURE_X + 180, PRESSURE_Y + CARD_VALUE_Y + 10);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 
@@ -353,71 +380,192 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     const char* trendLabel = (data.pressureTrend == Trend::UP) ? "Trend: Steigend" :
                              (data.pressureTrend == Trend::DOWN) ? "Trend: Fallend" : "Trend: Stabil";
     display.setTextDatum(TL_DATUM);
-    display.drawString(trendLabel, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_DETAIL_Y, FONT_TINY);
+    display.setFreeFont(FSS9);
+    display.drawString(trendLabel, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_DETAIL_Y);
 }
 
+// Legacy forecast widgets (deprecated - now using 3-day forecast column)
+// Kept for backward compatibility but not used in 3-column layout
 void drawForecast3hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
-    drawCard(display, FORECAST_3H_X, FORECAST_3H_Y);
-
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
-    display.setTextDatum(TL_DATUM);
-    display.drawString("Vorhersage 3h", FORECAST_3H_X + CARD_PADDING, FORECAST_3H_Y + CARD_LABEL_Y, FONT_SMALL);
-
-    if (!forecast.valid) {
-        display.drawString("n/a", FORECAST_3H_X + CARD_PADDING, FORECAST_3H_Y + CARD_VALUE_Y, FONT_LARGE);
-        return;
-    }
-
-    // Weather icon
-    const char* iconName = (forecast.weatherCode >= 61 && forecast.weatherCode <= 67) ? "rain" :
-                           (forecast.weatherCode >= 71 && forecast.weatherCode <= 77) ? "snow" :
-                           (forecast.weatherCode == 3) ? "cloudy" :
-                           (forecast.weatherCode == 2) ? "partly_cloudy" : "sunny";
-    drawWeatherIcon(display, FORECAST_3H_X + 10, FORECAST_3H_Y + 25, iconName, 45);
-
-    // Temperature
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.0fC", forecast.temperature);
-    display.setTextDatum(TL_DATUM);
-    display.drawString(tempStr, FORECAST_3H_X + 80, FORECAST_3H_Y + CARD_VALUE_Y + 5, FONT_MEDIUM);
-
-    // Precipitation
-    if (forecast.precipitation > 0.1) {
-        char precipStr[16];
-        snprintf(precipStr, sizeof(precipStr), "%.1fmm", forecast.precipitation);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(precipStr, FORECAST_3H_X + CARD_PADDING, FORECAST_3H_Y + CARD_DETAIL_Y, FONT_TINY);
-    }
+    // No longer used in 3-column layout
 }
 
 void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
-    drawCard(display, FORECAST_6H_X, FORECAST_6H_Y);
+    // No longer used in 3-column layout
+}
+
+void drawWindWidget(TFT_eSprite& display, const WindData& data) {
+    drawCard(display, WIND_X, WIND_Y);
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
-    display.drawString("Vorhersage 6h", FORECAST_6H_X + CARD_PADDING, FORECAST_6H_Y + CARD_LABEL_Y, FONT_SMALL);
+    display.setFreeFont(FSS9);
+    display.drawString("Wind", WIND_X + CARD_PADDING, WIND_Y + CARD_LABEL_Y);
 
-    if (!forecast.valid) {
-        display.drawString("n/a", FORECAST_6H_X + CARD_PADDING, FORECAST_6H_Y + CARD_VALUE_Y, FONT_LARGE);
+    if (!data.valid) {
+        display.setFreeFont(FSSB18);
+        display.drawString("n/a", WIND_X + CARD_PADDING, WIND_Y + CARD_VALUE_Y);
         return;
     }
 
-    const char* iconName = (forecast.weatherCode >= 61 && forecast.weatherCode <= 67) ? "rain" :
-                           (forecast.weatherCode >= 71 && forecast.weatherCode <= 77) ? "snow" :
-                           (forecast.weatherCode == 3) ? "cloudy" :
-                           (forecast.weatherCode == 2) ? "partly_cloudy" : "sunny";
-    drawWeatherIcon(display, FORECAST_6H_X + 10, FORECAST_6H_Y + 25, iconName, 45);
-
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.0fC", forecast.temperature);
+    // Wind speed
+    char speedStr[16];
+    snprintf(speedStr, sizeof(speedStr), "%d", data.strength);
     display.setTextDatum(TL_DATUM);
-    display.drawString(tempStr, FORECAST_6H_X + 80, FORECAST_6H_Y + CARD_VALUE_Y + 5, FONT_MEDIUM);
+    display.setFreeFont(FSSB18);
+    display.drawString(speedStr, WIND_X + CARD_PADDING, WIND_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS9);
+    display.drawString("km/h", WIND_X + 100, WIND_Y + CARD_VALUE_Y + 10);
 
-    if (forecast.precipitation > 0.1) {
+    // Wind direction as compass text (N, NO, O, SO, S, SW, W, NW)
+    const char* directions[] = {"N", "NO", "O", "SO", "S", "SW", "W", "NW"};
+    int dirIdx = ((data.angle + 22) / 45) % 8;
+    display.setTextDatum(TR_DATUM);
+    display.setFreeFont(FSS12);
+    display.drawString(directions[dirIdx], WIND_X + CARD_WIDTH - 10, WIND_Y + CARD_VALUE_Y + 10);
+
+    // Details: Gusts and max wind
+    char detailStr[48];
+    snprintf(detailStr, sizeof(detailStr), "Boen: %dkm/h  Max: %dkm/h",
+             data.gustStrength, data.maxWindStrength);
+    display.setTextDatum(TL_DATUM);
+    display.setFreeFont(FSS9);
+    display.drawString(detailStr, WIND_X + CARD_PADDING, WIND_Y + CARD_DETAIL_Y);
+}
+
+void drawRainWidget(TFT_eSprite& display, const RainData& data) {
+    drawCard(display, RAIN_X, RAIN_Y);
+
+    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextDatum(TL_DATUM);
+    display.setFreeFont(FSS9);
+    display.drawString("Niederschlag", RAIN_X + CARD_PADDING, RAIN_Y + CARD_LABEL_Y);
+
+    if (!data.valid) {
+        display.setFreeFont(FSSB18);
+        display.drawString("n/a", RAIN_X + CARD_PADDING, RAIN_Y + CARD_VALUE_Y);
+        return;
+    }
+
+    // Current rain (24h sum displayed as main value)
+    char rainStr[16];
+    snprintf(rainStr, sizeof(rainStr), "%.1f", data.sum24h);
+    display.setTextDatum(TL_DATUM);
+    display.setFreeFont(FSSB18);
+    display.drawString(rainStr, RAIN_X + CARD_PADDING, RAIN_Y + CARD_VALUE_Y);
+    display.setFreeFont(FSS9);
+    display.drawString("mm/24h", RAIN_X + 100, RAIN_Y + CARD_VALUE_Y + 10);
+
+    // Details: 1h sum
+    char detailStr[32];
+    snprintf(detailStr, sizeof(detailStr), "Letzte Stunde: %.1fmm", data.sum1h);
+    display.setTextDatum(TL_DATUM);
+    display.setFreeFont(FSS9);
+    display.drawString(detailStr, RAIN_X + CARD_PADDING, RAIN_Y + CARD_DETAIL_Y);
+}
+
+// Helper: Draw 3-time grid (06h, 12h, 18h)
+void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
+                     int x, int y, int width) {
+    int cellWidth = width / 3;
+
+    for (int i = 0; i < 3; i++) {
+        int cellX = x + (i * cellWidth);
+        const DayTimeForecast& dt = times[i];
+
+        // Time label
+        char timeStr[6];
+        snprintf(timeStr, sizeof(timeStr), "%02dh", dt.hour);
+        display.setFreeFont(FSS9);
+        display.setTextDatum(TC_DATUM);
+        display.drawString(timeStr, cellX + cellWidth/2, y);
+
+        // Weather icon (24×24px)
+        const char* icon = getIconFromCode(dt.symbolCode);
+        drawWeatherIcon(display, cellX + cellWidth/2 - 12, y + 15, icon, 24);
+
+        // Temperature
+        char tempStr[6];
+        snprintf(tempStr, sizeof(tempStr), "%d°", dt.temperature);
+        display.setFreeFont(FSS9);
+        display.drawString(tempStr, cellX + cellWidth/2, y + 42);
+
+        // Precipitation (if > 0)
+        if (dt.precipitationMm > 0) {
+            char precipStr[8];
+            snprintf(precipStr, sizeof(precipStr), "%.1fmm", dt.precipitationMm / 10.0);
+            display.drawString(precipStr, cellX + cellWidth/2, y + 60);
+        }
+    }
+}
+
+// Helper: Draw single daily forecast section
+void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
+                               int x, int y, const char* dayLabel, bool isToday) {
+    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextDatum(TL_DATUM);
+
+    // Day header (HEUTE = bold, others = normal)
+    display.setFreeFont(isToday ? FSSB12 : FSS12);
+    display.drawString(dayLabel, x + 6, y);
+
+    if (!day.valid) {
+        display.setFreeFont(FSS9);
+        display.drawString("n/a", x + 6, y + 20);
+        return;
+    }
+
+    // Icon size (HEUTE = 30×30, others = 24×24)
+    int iconSize = isToday ? 30 : 24;
+    int iconY = y + (isToday ? 22 : 18);
+
+    // Daily weather icon
+    const char* iconName = getIconFromCode(day.symbolCode);
+    drawWeatherIcon(display, x + 6, iconY, iconName, iconSize);
+
+    // Temperature range
+    char tempStr[20];
+    snprintf(tempStr, sizeof(tempStr), "%d°/%d°C", day.tempMin, day.tempMax);
+    display.setFreeFont(isToday ? FSSB12 : FSS12);
+    display.setTextDatum(TL_DATUM);
+    display.drawString(tempStr, x + 6 + iconSize + 8, iconY + 5);
+
+    // Precipitation (if > 0)
+    if (day.precipSum > 0) {
         char precipStr[16];
-        snprintf(precipStr, sizeof(precipStr), "%.1fmm", forecast.precipitation);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(precipStr, FORECAST_6H_X + CARD_PADDING, FORECAST_6H_Y + CARD_DETAIL_Y, FONT_TINY);
+        snprintf(precipStr, sizeof(precipStr), "%.1fmm", day.precipSum / 10.0);
+        display.setFreeFont(FSS9);
+        display.setTextDatum(TR_DATUM);
+        display.drawString(precipStr, x + FORECAST_COL_WIDTH - 6, iconY + 5);
+    }
+
+    // 3-time grid (06h, 12h, 18h)
+    int gridY = y + (isToday ? 70 : 55);
+    drawDayTimeGrid(display, day.times, x + 6, gridY, FORECAST_COL_WIDTH - 12);
+}
+
+// Main 3-day forecast column
+void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast) {
+    // Draw tall card border
+    display.drawRect(FORECAST_COL_X, FORECAST_COL_Y, FORECAST_COL_WIDTH, FORECAST_COL_HEIGHT, TFT_BLACK);
+
+    // Three daily sections (no header, start at top)
+    const char* dayLabels[] = {"HEUTE", "MORGEN", "UEBERMORGEN"};
+    int yPositions[] = {
+        FORECAST_COL_Y + 6,       // HEUTE: starts at top
+        FORECAST_COL_Y + 146,     // MORGEN
+        FORECAST_COL_Y + 271      // UEBERMORGEN
+    };
+
+    for (int i = 0; i < 3; i++) {
+        // Draw separator between days
+        if (i > 0) {
+            display.drawFastHLine(FORECAST_COL_X, yPositions[i] - 1, FORECAST_COL_WIDTH, TFT_BLACK);
+        }
+
+        drawDailyForecastSection(display, forecast.days[i],
+                                 FORECAST_COL_X, yPositions[i],
+                                 dayLabels[i], i == 0);  // isToday = (i == 0)
     }
 }
 
@@ -426,10 +574,11 @@ void drawStatusBar(TFT_eSprite& display, uint32_t batteryMv, uint8_t batteryPerc
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
+    display.setFreeFont(FSS9);
 
     char statusStr[64];
     snprintf(statusStr, sizeof(statusStr), "Bat: %dmV (%d%%)", batteryMv, batteryPercent);
-    display.drawString(statusStr, MARGIN, STATUS_BAR_Y + 2, FONT_TINY);
+    display.drawString(statusStr, MARGIN, STATUS_BAR_Y + 2);
 }
 
 void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
@@ -438,21 +587,20 @@ void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
     // Header
     drawHeader(display, LOCATION_NAME, data.updateTime);
 
-    // Row 1: Temperature cards
+    // COLUMN 1: INDOOR SENSORS
     drawIndoorTempWidget(display, data.weather.indoor);
-    drawOutdoorTempWidget(display, data.weather.outdoor);
-
-    // Row 2: Humidity cards
     drawIndoorHumidWidget(display, data.weather.indoor);
-    drawOutdoorHumidWidget(display, data.weather.outdoor);
-
-    // Row 3: Air Quality + Pressure
     drawAirQualityWidget(display, data.weather.indoor);
     drawPressureWidget(display, data.weather.indoor);
 
-    // Row 4: Forecast cards
-    drawForecast3hWidget(display, data.forecast.forecast3h);
-    drawForecast6hWidget(display, data.forecast.forecast6h);
+    // COLUMN 2: OUTDOOR SENSORS
+    drawOutdoorTempWidget(display, data.weather.outdoor);
+    drawOutdoorHumidWidget(display, data.weather.outdoor);
+    drawWindWidget(display, data.weather.wind);
+    drawRainWidget(display, data.weather.rain);
+
+    // COLUMN 3: 3-DAY FORECAST
+    draw3DayForecastColumn(display, data.forecast);
 
     // Status bar
     drawStatusBar(display, data.batteryVoltage, data.batteryPercent, data.updateTime);

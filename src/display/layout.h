@@ -14,55 +14,69 @@
 #define HEADER_HEIGHT 45
 #define HEADER_Y 0
 
-// Two-column card grid (like netatmo-dashboard)
-#define CARD_WIDTH 392
+// Three-column card grid (3 × 256px)
+#define CARD_WIDTH 256
 #define CARD_HEIGHT 95
 
-// Left column positions
-#define LEFT_COLUMN_X MARGIN
-#define LEFT_COLUMN_WIDTH CARD_WIDTH
+// Column positions
+// Math check: 8 + 256 + 8 + 256 + 8 + 256 + 8 = 800 ✓
+#define COL1_X MARGIN                           // 8
+#define COL2_X (COL1_X + CARD_WIDTH + COLUMN_GAP)  // 272
+#define COL3_X (COL2_X + CARD_WIDTH + COLUMN_GAP)  // 536
 
-// Right column positions
-#define RIGHT_COLUMN_X (LEFT_COLUMN_X + CARD_WIDTH + COLUMN_GAP)
-#define RIGHT_COLUMN_WIDTH CARD_WIDTH
+// Forecast column (tall widget for 3-day forecast)
+#define FORECAST_COL_WIDTH CARD_WIDTH
+#define FORECAST_COL_HEIGHT 422  // SCREEN_HEIGHT - HEADER_HEIGHT - MARGIN - STATUS_BAR_HEIGHT - MARGIN
 
 // Card vertical positions (4 rows of cards)
-#define ROW1_Y (HEADER_HEIGHT + MARGIN)
-#define ROW2_Y (ROW1_Y + CARD_HEIGHT + CARD_SPACING)
-#define ROW3_Y (ROW2_Y + CARD_HEIGHT + CARD_SPACING)
-#define ROW4_Y (ROW3_Y + CARD_HEIGHT + CARD_SPACING)
+#define ROW1_Y (HEADER_HEIGHT + MARGIN)         // 53
+#define ROW2_Y (ROW1_Y + CARD_HEIGHT + CARD_SPACING)  // 156
+#define ROW3_Y (ROW2_Y + CARD_HEIGHT + CARD_SPACING)  // 259
+#define ROW4_Y (ROW3_Y + CARD_HEIGHT + CARD_SPACING)  // 362
 
-// Card internal layout
+// Card internal layout (adjusted for narrower 256px cards)
 #define CARD_PADDING 6
 #define CARD_LABEL_Y 8           // Label position from card top
 #define CARD_VALUE_Y 28          // Large value position
-#define CARD_TREND_X_OFFSET 340  // Trend icon X offset from card left
+#define CARD_TREND_X_OFFSET 200  // Trend icon X offset (adjusted from 340 for 256px width)
 #define CARD_TREND_Y 30          // Trend icon Y position
 #define CARD_DETAIL_Y 75         // Detail text position (min/max, etc)
 
-// Row 1: Temperature cards
-#define INDOOR_TEMP_X LEFT_COLUMN_X
+// ============================================================================
+// COLUMN 1: INDOOR SENSORS (Netatmo Base Station)
+// ============================================================================
+#define INDOOR_TEMP_X COL1_X
 #define INDOOR_TEMP_Y ROW1_Y
-#define OUTDOOR_TEMP_X RIGHT_COLUMN_X
+
+#define INDOOR_HUMID_X COL1_X
+#define INDOOR_HUMID_Y ROW2_Y
+
+#define AIR_QUALITY_X COL1_X
+#define AIR_QUALITY_Y ROW3_Y
+
+#define PRESSURE_X COL1_X
+#define PRESSURE_Y ROW4_Y
+
+// ============================================================================
+// COLUMN 2: OUTDOOR SENSORS (Netatmo Outdoor + Wind/Rain Modules)
+// ============================================================================
+#define OUTDOOR_TEMP_X COL2_X
 #define OUTDOOR_TEMP_Y ROW1_Y
 
-// Row 2: Humidity cards
-#define INDOOR_HUMID_X LEFT_COLUMN_X
-#define INDOOR_HUMID_Y ROW2_Y
-#define OUTDOOR_HUMID_X RIGHT_COLUMN_X
+#define OUTDOOR_HUMID_X COL2_X
 #define OUTDOOR_HUMID_Y ROW2_Y
 
-// Row 3: Air Quality (CO2) + Pressure
-#define AIR_QUALITY_X LEFT_COLUMN_X
-#define AIR_QUALITY_Y ROW3_Y
-#define PRESSURE_X RIGHT_COLUMN_X
-#define PRESSURE_Y ROW3_Y
+#define WIND_X COL2_X
+#define WIND_Y ROW3_Y
 
-// Row 4: Forecast cards
-#define FORECAST_3H_X LEFT_COLUMN_X
-#define FORECAST_3H_Y ROW4_Y
-#define FORECAST_6H_X RIGHT_COLUMN_X
-#define FORECAST_6H_Y ROW4_Y
+#define RAIN_X COL2_X
+#define RAIN_Y ROW4_Y
+
+// ============================================================================
+// COLUMN 3: 3-DAY FORECAST (met.no API)
+// ============================================================================
+#define FORECAST_COL_X COL3_X
+#define FORECAST_COL_Y ROW1_Y
 
 // Status bar at bottom (thin strip)
 #define STATUS_BAR_Y 465

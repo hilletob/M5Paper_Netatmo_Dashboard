@@ -14,9 +14,16 @@ void drawIndoorPressureWidget(TFT_eSprite& display, const IndoorData& data);
 void drawIndoorCO2Widget(TFT_eSprite& display, const IndoorData& data);
 
 void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data);
+void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data);
+
+void drawWindWidget(TFT_eSprite& display, const WindData& data);
+void drawRainWidget(TFT_eSprite& display, const RainData& data);
 
 void drawForecast3hWidget(TFT_eSprite& display, const ForecastPoint& forecast);
 void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast);
+
+// New 3-day forecast column
+void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast);
 
 void drawStatusBar(TFT_eSprite& display, uint32_t batteryMv, uint8_t batteryPercent,
                    unsigned long updateTime);
