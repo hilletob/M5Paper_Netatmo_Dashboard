@@ -245,13 +245,44 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
-    // Min/max detail
+    // Min/max detail with custom degree symbols
     if (data.minTemp != 0 || data.maxTemp != 0) {
-        char detailStr[64];
-        snprintf(detailStr, sizeof(detailStr), "min %.1f°C  max %.1f°C", data.minTemp, data.maxTemp);
         display.setTextDatum(TL_DATUM);
         display.setFreeFont(FSS9);
-        display.drawString(detailStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_DETAIL_Y);
+        int x = INDOOR_TEMP_X + CARD_PADDING;
+        int y = INDOOR_TEMP_Y + CARD_DETAIL_Y;
+
+        // Draw "min "
+        display.drawString("min ", x, y);
+        x += display.textWidth("min ");
+
+        // Draw min temperature with degree symbol
+        char tempStr[10];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
+        display.drawString(tempStr, x, y);
+        x += display.textWidth(tempStr) + 5;
+
+        // Draw degree symbol (circle)
+        display.drawCircle(x, y + 3, 2, TFT_BLACK);
+        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        x += 5;
+
+        // Draw "C  max "
+        display.drawString("C  max ", x, y);
+        x += display.textWidth("C  max ");
+
+        // Draw max temperature with degree symbol
+        snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
+        display.drawString(tempStr, x, y);
+        x += display.textWidth(tempStr) + 5;
+
+        // Draw degree symbol (circle)
+        display.drawCircle(x, y + 3, 2, TFT_BLACK);
+        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        x += 5;
+
+        // Draw "C"
+        display.drawString("C", x, y);
     }
 }
 
@@ -276,12 +307,44 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
+    // Min/max detail with custom degree symbols
     if (data.minTemp != 0 || data.maxTemp != 0) {
-        char detailStr[64];
-        snprintf(detailStr, sizeof(detailStr), "min %.1f°C  max %.1f°C", data.minTemp, data.maxTemp);
         display.setTextDatum(TL_DATUM);
         display.setFreeFont(FSS9);
-        display.drawString(detailStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_DETAIL_Y);
+        int x = OUTDOOR_TEMP_X + CARD_PADDING;
+        int y = OUTDOOR_TEMP_Y + CARD_DETAIL_Y;
+
+        // Draw "min "
+        display.drawString("min ", x, y);
+        x += display.textWidth("min ");
+
+        // Draw min temperature with degree symbol
+        char tempStr[10];
+        snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
+        display.drawString(tempStr, x, y);
+        x += display.textWidth(tempStr) + 5;
+
+        // Draw degree symbol (circle)
+        display.drawCircle(x, y + 3, 2, TFT_BLACK);
+        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        x += 5;
+
+        // Draw "C  max "
+        display.drawString("C  max ", x, y);
+        x += display.textWidth("C  max ");
+
+        // Draw max temperature with degree symbol
+        snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
+        display.drawString(tempStr, x, y);
+        x += display.textWidth(tempStr) + 5;
+
+        // Draw degree symbol (circle)
+        display.drawCircle(x, y + 3, 2, TFT_BLACK);
+        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        x += 5;
+
+        // Draw "C"
+        display.drawString("C", x, y);
     }
 }
 
@@ -336,11 +399,29 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     float alpha = ((a * data.temperature) / (b + data.temperature)) + log(data.humidity / 100.0);
     float dewPoint = (b * alpha) / (a - alpha);
 
-    char detailStr[32];
-    snprintf(detailStr, sizeof(detailStr), "Taupunkt: %.1f°C", dewPoint);
+    // Draw dew point with custom degree symbol
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSS9);
-    display.drawString(detailStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_DETAIL_Y);
+    int dewX = OUTDOOR_HUMID_X + CARD_PADDING;
+    int dewY = OUTDOOR_HUMID_Y + CARD_DETAIL_Y;
+
+    // Draw "Taupunkt: "
+    display.drawString("Taupunkt: ", dewX, dewY);
+    dewX += display.textWidth("Taupunkt: ");
+
+    // Draw temperature value
+    char dewTempStr[10];
+    snprintf(dewTempStr, sizeof(dewTempStr), "%.1f", dewPoint);
+    display.drawString(dewTempStr, dewX, dewY);
+    dewX += display.textWidth(dewTempStr) + 5;
+
+    // Draw degree symbol (circle)
+    display.drawCircle(dewX, dewY + 3, 2, TFT_BLACK);
+    display.drawCircle(dewX, dewY + 3, 3, TFT_BLACK);
+    dewX += 5;
+
+    // Draw "C"
+    display.drawString("C", dewX, dewY);
 }
 
 void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
@@ -404,70 +485,58 @@ void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
     // No longer used in 3-column layout
 }
 
-void drawWindWidget(TFT_eSprite& display, const WindData& data) {
-    drawCard(display, WIND_X, WIND_Y);
+void drawAIWidget(TFT_eSprite& display, const String& commentary) {
+    // Position: WIND_X=272, WIND_Y=259
+    // Size: 256px × 198px (2 rows + spacing)
+    int cardHeight = 198;
+    display.drawRect(WIND_X, WIND_Y, CARD_WIDTH, cardHeight, TFT_BLACK);
+
+    // Empty widget if no commentary
+    if (commentary.length() == 0) return;
+
+    // Text area: 244px wide × 178px high (no label, starts from top)
+    int textX = WIND_X + CARD_PADDING;
+    int textY = WIND_Y + CARD_PADDING + 8;  // Start near top of widget
 
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSS9);
-    display.drawString("Wind", WIND_X + CARD_PADDING, WIND_Y + CARD_LABEL_Y);
+    int maxWidth = CARD_WIDTH - (CARD_PADDING * 2);
+    int lineHeight = 20;  // FSS9 with extra spacing
 
-    if (!data.valid) {
-        display.setFreeFont(FSSB18);
-        display.drawString("n/a", WIND_X + CARD_PADDING, WIND_Y + CARD_VALUE_Y);
-        return;
+    // Simple word wrapping algorithm
+    String remaining = commentary;
+    int currentY = textY;
+
+    while (remaining.length() > 0 && currentY + lineHeight < WIND_Y + cardHeight - 6) {
+        // Find longest substring that fits in maxWidth
+        int fitLength = remaining.length();
+        for (int i = 1; i <= remaining.length(); i++) {
+            if (display.textWidth(remaining.substring(0, i)) > maxWidth) {
+                fitLength = i - 1;
+                break;
+            }
+        }
+
+        // Try to break at word boundary
+        String line;
+        if (fitLength < remaining.length()) {
+            int lastSpace = remaining.lastIndexOf(' ', fitLength);
+            if (lastSpace > 0 && lastSpace > fitLength - 20) {
+                line = remaining.substring(0, lastSpace);
+                remaining = remaining.substring(lastSpace + 1);
+            } else {
+                line = remaining.substring(0, fitLength);
+                remaining = remaining.substring(fitLength);
+            }
+        } else {
+            line = remaining;
+            remaining = "";
+        }
+
+        display.drawString(line, textX, currentY);
+        currentY += lineHeight;
     }
-
-    // Wind speed
-    char speedStr[16];
-    snprintf(speedStr, sizeof(speedStr), "%dkm/h", data.strength);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
-    display.drawString(speedStr, WIND_X + CARD_PADDING, WIND_Y + CARD_VALUE_Y);
-
-    // Wind direction as compass text (N, NO, O, SO, S, SW, W, NW)
-    const char* directions[] = {"N", "NO", "O", "SO", "S", "SW", "W", "NW"};
-    int dirIdx = ((data.angle + 22) / 45) % 8;
-    display.setTextDatum(TR_DATUM);
-    display.setFreeFont(FSS12);
-    display.drawString(directions[dirIdx], WIND_X + CARD_WIDTH - 10, WIND_Y + CARD_VALUE_Y + 10);
-
-    // Details: Gusts and max wind
-    char detailStr[48];
-    snprintf(detailStr, sizeof(detailStr), "Boen: %dkm/h  Max: %dkm/h",
-             data.gustStrength, data.maxWindStrength);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-    display.drawString(detailStr, WIND_X + CARD_PADDING, WIND_Y + CARD_DETAIL_Y);
-}
-
-void drawRainWidget(TFT_eSprite& display, const RainData& data) {
-    drawCard(display, RAIN_X, RAIN_Y);
-
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-    display.drawString("Niederschlag", RAIN_X + CARD_PADDING, RAIN_Y + CARD_LABEL_Y);
-
-    if (!data.valid) {
-        display.setFreeFont(FSSB18);
-        display.drawString("n/a", RAIN_X + CARD_PADDING, RAIN_Y + CARD_VALUE_Y);
-        return;
-    }
-
-    // Current rain (24h sum displayed as main value)
-    char rainStr[24];
-    snprintf(rainStr, sizeof(rainStr), "%.1fmm/24h", data.sum24h);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
-    display.drawString(rainStr, RAIN_X + CARD_PADDING, RAIN_Y + CARD_VALUE_Y);
-
-    // Details: 1h sum
-    char detailStr[32];
-    snprintf(detailStr, sizeof(detailStr), "Letzte Stunde: %.1fmm", data.sum1h);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-    display.drawString(detailStr, RAIN_X + CARD_PADDING, RAIN_Y + CARD_DETAIL_Y);
 }
 
 // Helper: Draw 3-time grid (06h, 12h, 18h)
@@ -529,12 +598,39 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
     const char* iconName = getIconFromCode(day.symbolCode);
     drawWeatherIcon(display, x + 6, iconY, iconName, iconSize);
 
-    // Temperature range
-    char tempStr[20];
-    snprintf(tempStr, sizeof(tempStr), "%d°C/%d°C", day.tempMin, day.tempMax);
+    // Temperature range with custom degree symbols
     display.setFreeFont(isToday ? FSSB12 : FSS12);
     display.setTextDatum(TL_DATUM);
-    display.drawString(tempStr, x + 6 + iconSize + 8, iconY + 5);
+    int tempX = x + 6 + iconSize + 8;
+    int tempY = iconY + 5;
+
+    // Draw min temperature
+    char tempStr[10];
+    snprintf(tempStr, sizeof(tempStr), "%d", day.tempMin);
+    display.drawString(tempStr, tempX, tempY);
+    tempX += display.textWidth(tempStr) + 5;
+
+    // Draw degree symbol for min temp
+    display.drawCircle(tempX, tempY + 3, 2, TFT_BLACK);
+    display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
+    tempX += 5;
+
+    // Draw "C/"
+    display.drawString("C/", tempX, tempY);
+    tempX += display.textWidth("C/");
+
+    // Draw max temperature
+    snprintf(tempStr, sizeof(tempStr), "%d", day.tempMax);
+    display.drawString(tempStr, tempX, tempY);
+    tempX += display.textWidth(tempStr) + 5;
+
+    // Draw degree symbol for max temp
+    display.drawCircle(tempX, tempY + 3, 2, TFT_BLACK);
+    display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
+    tempX += 5;
+
+    // Draw "C"
+    display.drawString("C", tempX, tempY);
 
     // Precipitation (if > 0)
     if (day.precipSum > 0) {
@@ -592,11 +688,10 @@ void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
     drawAirQualityWidget(display, data.weather.indoor);
     drawPressureWidget(display, data.weather.indoor);
 
-    // COLUMN 2: OUTDOOR SENSORS
+    // COLUMN 2: OUTDOOR SENSORS + AI WIDGET
     drawOutdoorTempWidget(display, data.weather.outdoor);
     drawOutdoorHumidWidget(display, data.weather.outdoor);
-    drawWindWidget(display, data.weather.wind);
-    drawRainWidget(display, data.weather.rain);
+    drawAIWidget(display, data.aiCommentary);
 
     // COLUMN 3: 3-DAY FORECAST
     draw3DayForecastColumn(display, data.forecast);

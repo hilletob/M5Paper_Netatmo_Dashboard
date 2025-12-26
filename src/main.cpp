@@ -7,6 +7,7 @@
 // API clients
 #include "api/netatmo_client.h"
 #include "api/meteo_client.h"
+#include "api/gemini_client.h"
 
 // Display
 #include "display/widgets.h"
@@ -29,6 +30,7 @@ TFT_eSprite display = TFT_eSprite(&tft);
 
 NetatmoClient netatmoClient;
 MeteoClient meteoClient;
+GeminiClient geminiClient;
 
 // Function prototypes
 bool connectWiFi();
@@ -108,6 +110,13 @@ void setup() {
     DashboardData dashboardData;
     bool dataAvailable = false;
 
+    // Load previous data from cache for CO2 trend calculation
+    DashboardData previousData;
+    bool hasPreviousData = DataCache::load(previousData);
+    if (hasPreviousData) {
+        ESP_LOGI("main", "Loaded previous CO2 value: %d ppm", previousData.weather.indoor.co2);
+    }
+
     // Connect WiFi
     if (connectWiFi()) {
         // Sync time if needed
@@ -122,6 +131,24 @@ void setup() {
         // Fetch fresh weather data
         if (fetchWeatherData(dashboardData)) {
             ESP_LOGI("main", "Weather data fetched successfully");
+
+            // Calculate CO2 trend by comparing with previous measurement
+            if (hasPreviousData && previousData.weather.indoor.valid && dashboardData.weather.indoor.valid) {
+                int co2Diff = dashboardData.weather.indoor.co2 - previousData.weather.indoor.co2;
+
+                if (abs(co2Diff) < 10) {
+                    dashboardData.weather.indoor.co2Trend = Trend::STABLE;
+                    ESP_LOGI("main", "CO2 trend: STABLE (diff: %d ppm)", co2Diff);
+                } else if (co2Diff > 0) {
+                    dashboardData.weather.indoor.co2Trend = Trend::UP;
+                    ESP_LOGI("main", "CO2 trend: UP (diff: +%d ppm)", co2Diff);
+                } else {
+                    dashboardData.weather.indoor.co2Trend = Trend::DOWN;
+                    ESP_LOGI("main", "CO2 trend: DOWN (diff: %d ppm)", co2Diff);
+                }
+            } else {
+                ESP_LOGI("main", "CO2 trend: STABLE (no previous data)");
+            }
 
             // Save to cache for offline use
             DataCache::save(dashboardData);
@@ -264,6 +291,20 @@ bool fetchWeatherData(DashboardData& data) {
     if (!meteoClient.getForecast(data.forecast)) {
         ESP_LOGE("main", "Failed to fetch forecast data");
         success = false;
+    }
+
+    // Generate Gemini AI commentary (only if we have weather data)
+    if (data.weather.indoor.valid || data.weather.outdoor.valid) {
+        unsigned long timestamp = data.weather.timestamp > 0 ?
+            data.weather.timestamp : time(nullptr);
+
+        data.aiCommentary = geminiClient.generateCommentary(data.weather, timestamp);
+
+        if (data.aiCommentary.length() == 0) {
+            ESP_LOGW("main", "Gemini commentary failed - widget will be empty");
+        } else {
+            ESP_LOGI("main", "Gemini: %s", data.aiCommentary.c_str());
+        }
     }
 
     // Even if one API fails, we can still show partial data

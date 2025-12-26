@@ -1,0 +1,200 @@
+#include "gemini_client.h"
+#include "http_utils.h"
+#include <time.h>
+
+GeminiClient::GeminiClient() {
+}
+
+String GeminiClient::buildPrompt(const WeatherData& weather, unsigned long timestamp) {
+    String prompt = "Du bist ein sympathischer Wetter-Assistent fuer ein Dashboard.\n";
+    prompt += "Deine Aufgabe ist es, aus strukturierten Wetterdaten eine kurze, leicht witzige Aussage auf Deutsch (Schweizer Rechtschreibung) zu formulieren.\n\n";
+
+    prompt += "Ton & Stil:\n";
+    prompt += "- Freundlich, trocken-humorig, nie albern\n";
+    prompt += "- Ironie oder Augenzwinkern sind erlaubt, Wortspiele sparsam\n";
+    prompt += "- Der Text soll auch in einem professionellen Umfeld funktionieren\n\n";
+
+    prompt += "Regeln:\n";
+    prompt += "- Genau 1 kurzer Satz (max. 140 Zeichen)\n";
+    prompt += "- Fokus auf das aktuelle Empfinden\n";
+    prompt += "- Innen- und Aussenwerte sinngemaess kombinieren\n";
+    prompt += "- Trends (steigend, fallend, stabil) nur erwaehnen, wenn sie eine Pointe unterstuetzen\n";
+    prompt += "- Der Timestamp darf fuer zeitbezogenen Humor genutzt werden (z. B. Morgen, Abend, Buerozeit)\n";
+    prompt += "- Keine Zahlen wiederholen, keine Aufzaehlungen, keine Emojis\n";
+    prompt += "- Keine Empfehlungen oder Erklaerungen\n\n";
+
+    // Timestamp (Unix epoch, Europe/Zurich timezone)
+    prompt += "Aktueller Zeitpunkt (Unix Timestamp): ";
+    prompt += String(timestamp);
+    prompt += " Sekunden (Zeitzone: Europe/Zurich)\n\n";
+    prompt += " Ort: Davos";
+
+    // Weather data
+    prompt += "Wetterdaten:\n";
+
+    if (weather.indoor.valid) {
+        // Helper lambda to convert trend to German
+        auto trendToGerman = [](Trend t) -> const char* {
+            switch (t) {
+                case Trend::UP: return "steigend";
+                case Trend::DOWN: return "fallend";
+                case Trend::STABLE: return "stabil";
+                default: return "";
+            }
+        };
+
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer),
+                "Innen: %.1fC %s, %d%% Luftfeuchtigkeit, %d ppm CO2 %s, %d mbar Luftdruck %s\n",
+                weather.indoor.temperature, trendToGerman(weather.indoor.temperatureTrend),
+                weather.indoor.humidity,
+                weather.indoor.co2, trendToGerman(weather.indoor.co2Trend),
+                weather.indoor.pressure, trendToGerman(weather.indoor.pressureTrend));
+        prompt += buffer;
+    }
+
+    if (weather.outdoor.valid) {
+        auto trendToGerman = [](Trend t) -> const char* {
+            switch (t) {
+                case Trend::UP: return "steigend";
+                case Trend::DOWN: return "fallend";
+                case Trend::STABLE: return "stabil";
+                default: return "";
+            }
+        };
+
+        char buffer[128];
+        snprintf(buffer, sizeof(buffer),
+                "Aussen: %.1fC %s, %d%% Luftfeuchtigkeit\n",
+                weather.outdoor.temperature, trendToGerman(weather.outdoor.temperatureTrend),
+                weather.outdoor.humidity);
+        prompt += buffer;
+    }
+
+
+    return prompt;
+}
+
+const char* GeminiClient::getSeason(unsigned long timestamp) {
+    time_t t = timestamp;
+    struct tm* tm = localtime(&t);
+    int month = tm->tm_mon + 1;  // 1-12
+
+    if (month >= 3 && month <= 5) return "Fruehling";
+    if (month >= 6 && month <= 8) return "Sommer";
+    if (month >= 9 && month <= 11) return "Herbst";
+    return "Winter";
+}
+
+const char* GeminiClient::getTimeOfDay(unsigned long timestamp) {
+    time_t t = timestamp;
+    struct tm* tm = localtime(&t);
+    int hour = tm->tm_hour;
+
+    if (hour >= 5 && hour < 12) return "Morgen";
+    if (hour >= 12 && hour < 18) return "Nachmittag";
+    if (hour >= 18 && hour < 22) return "Abend";
+    return "Nacht";
+}
+
+const char* GeminiClient::getHoliday(unsigned long timestamp) {
+    time_t t = timestamp;
+    struct tm* tm = localtime(&t);
+    int month = tm->tm_mon + 1;
+    int day = tm->tm_mday;
+
+    // Fixed holidays
+    if (month == 1 && day == 1) return "Neujahr";
+    if (month == 8 && day == 1) return "Bundesfeier";
+    if (month == 12 && day == 24) return "Heiligabend";
+    if (month == 12 && day == 25) return "Weihnachten";
+    if (month == 12 && day == 26) return "Stephanstag";
+    if (month == 12 && day == 31) return "Silvester";
+
+    // Easter calculation (simplified - could use full algorithm)
+    // For now, just check typical Easter dates in April
+    if (month == 4 && (day >= 1 && day <= 20)) {
+        // Easter Sunday typically falls here
+        if (day == tm->tm_wday + 14) return "Ostern";  // Rough approximation
+    }
+
+    return "";  // No holiday
+}
+
+String GeminiClient::generateCommentary(const WeatherData& weather, unsigned long timestamp) {
+    ESP_LOGI("gemini", "Generating weather commentary");
+
+    // Check if API key is configured
+    if (strlen(GEMINI_API_KEY) == 0 || strcmp(GEMINI_API_KEY, "your-gemini-api-key-here") == 0) {
+        ESP_LOGE("gemini", "GEMINI_API_KEY not configured");
+        return "";
+    }
+
+    // Build prompt
+    String prompt = buildPrompt(weather, timestamp);
+    ESP_LOGD("gemini", "Prompt: %s", prompt.c_str());
+
+    // Build JSON request body
+    // Gemini API format: {"contents":[{"parts":[{"text":"prompt"}]}]}
+    JsonDocument requestDoc;
+    JsonArray contents = requestDoc["contents"].to<JsonArray>();
+    JsonObject content = contents.add<JsonObject>();
+    JsonArray parts = content["parts"].to<JsonArray>();
+    JsonObject part = parts.add<JsonObject>();
+    part["text"] = prompt;
+
+    String requestBody;
+    serializeJson(requestDoc, requestBody);
+
+    ESP_LOGD("gemini", "Request size: %d bytes", requestBody.length());
+
+    // Make API request
+    JsonDocument responseDoc;
+    if (!HTTPUtils::httpPostJSON(GEMINI_API_URL, requestBody.c_str(), responseDoc, GEMINI_API_KEY)) {
+        ESP_LOGE("gemini", "API request failed");
+        return "";
+    }
+
+    // Parse response
+    // Response format: {"candidates":[{"content":{"parts":[{"text":"response"}]}}]}
+    JsonArray candidates = responseDoc["candidates"];
+    if (!candidates || candidates.size() == 0) {
+        ESP_LOGE("gemini", "No candidates in response");
+        return "";
+    }
+
+    JsonObject candidate = candidates[0];
+    JsonObject contentObj = candidate["content"];
+    if (!contentObj) {
+        ESP_LOGE("gemini", "No content in candidate");
+        return "";
+    }
+
+    JsonArray partsArray = contentObj["parts"];
+    if (!partsArray || partsArray.size() == 0) {
+        ESP_LOGE("gemini", "No parts in content");
+        return "";
+    }
+
+    JsonObject partObj = partsArray[0];
+    const char* text = partObj["text"];
+    if (!text) {
+        ESP_LOGE("gemini", "No text in part");
+        return "";
+    }
+
+    String commentary = String(text);
+    commentary.trim();  // Remove leading/trailing whitespace
+
+    // Replace umlauts for ASCII-only FreeFonts
+    commentary.replace("ä", "ae");
+    commentary.replace("ö", "oe");
+    commentary.replace("ü", "ue");
+    commentary.replace("Ä", "Ae");
+    commentary.replace("Ö", "Oe");
+    commentary.replace("Ü", "Ue");
+    commentary.replace("ß", "ss");
+
+    ESP_LOGI("gemini", "Generated: %s", commentary.c_str());
+    return commentary;
+}

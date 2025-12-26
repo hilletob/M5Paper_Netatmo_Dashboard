@@ -151,6 +151,52 @@ public:
         ESP_LOGE("http", "All retries failed for: %s", url);
         return false;
     }
+
+    // POST JSON data and parse JSON response (for Gemini API)
+    static bool httpPostJSON(const char* url, const char* jsonBody,
+                            JsonDocument& doc, const char* apiKey = nullptr) {
+        WiFiClientSecure client;
+        client.setInsecure();  // Skip certificate validation
+
+        HTTPClient http;
+        http.setReuse(false);
+        http.setTimeout(10000);  // 10 second timeout for Gemini
+        http.setConnectTimeout(10000);
+        http.setUserAgent(HTTP_USER_AGENT);
+
+        if (!http.begin(client, url)) {
+            ESP_LOGE("http", "Failed to begin HTTP connection to: %s", url);
+            return false;
+        }
+
+        http.addHeader("Content-Type", "application/json");
+        if (apiKey != nullptr) {
+            // Gemini uses x-goog-api-key header (not Bearer token)
+            http.addHeader("x-goog-api-key", apiKey);
+        }
+
+        ESP_LOGI("http", "POST %s", url);
+        int httpCode = http.POST(jsonBody);
+
+        if (httpCode != HTTP_CODE_OK) {
+            ESP_LOGE("http", "POST failed, code: %d", httpCode);
+            http.end();
+            return false;
+        }
+
+        String payload = http.getString();
+        http.end();
+
+        // Parse JSON response
+        DeserializationError error = deserializeJson(doc, payload);
+        if (error) {
+            ESP_LOGE("http", "JSON parse failed: %s", error.c_str());
+            return false;
+        }
+
+        ESP_LOGI("http", "POST success, size: %d bytes", payload.length());
+        return true;
+    }
 };
 
 #endif  // HTTP_UTILS_H

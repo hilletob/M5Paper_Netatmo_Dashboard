@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(pio run:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.met.no)",
+      "WebSearch",
+      "WebFetch(domain:docs.api.met.no)",
+      "WebFetch(domain:files.seeedstudio.com)"
     ]
   }
 }

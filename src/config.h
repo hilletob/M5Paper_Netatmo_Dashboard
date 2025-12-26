@@ -80,6 +80,14 @@
 #define NETATMO_WEATHER_URL "https://api.netatmo.com/api/getstationsdata"
 #define METEO_FORECAST_URL "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 
+// Gemini API Configuration
+#ifndef GEMINI_API_KEY
+#define GEMINI_API_KEY ""
+#endif
+#ifndef GEMINI_API_URL
+#define GEMINI_API_URL "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
+#endif
+
 // HTTP Configuration
 #ifndef HTTP_TIMEOUT_MS
 #define HTTP_TIMEOUT_MS 20000  // 20 seconds (met.no can be slower)
