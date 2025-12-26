@@ -2,6 +2,8 @@
 
 A weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display that shows indoor/outdoor climate data from Netatmo and weather forecasts from MeteoSwiss (Open-Meteo).
 
+![Weather Dashboard](docs/IMG_3327.jpeg)
+
 ## Features
 
 - **Netatmo Integration**: Indoor temperature, humidity, CO2, pressure with trends
@@ -157,6 +159,34 @@ Default is 11 minutes after Netatmo update. To change:
 - Low battery warnings
 - Voltage range: 3.3V (0%) to 4.35V (100%)
 
+## Font System
+
+### FreeFonts Limitations
+
+The dashboard uses FreeFonts from Seeed_GFX which only support ASCII characters (0x20-0x7E). This means:
+- **No German umlauts**: ä, ö, ü displayed as "ae", "oe", "ue"
+- **No degree symbol**: Custom-drawn using circles instead
+
+### Custom Degree Symbol
+
+Temperature displays use a custom `drawTemperature()` helper that:
+1. Renders the numeric value (e.g., "18.3")
+2. Draws the degree symbol as two concentric circles (radius 2 and 3)
+3. Adds "C" after the symbol
+4. Result: "18.3 °C" with proper spacing
+
+**Note**: We attempted migration to U8g2 fonts for UTF-8 support but encountered rendering issues with 1-bit sprite buffers. FreeFonts remain the stable solution.
+
+### Combined Units
+
+All units are displayed directly after values with no spacing:
+- Temperature: `18.3 °C` (degree symbol custom-drawn)
+- Humidity: `65%`
+- CO2: `850ppm`
+- Pressure: `1015hPa`
+- Wind: `12km/h`
+- Rain: `2.5mm/24h`
+
 ## Troubleshooting
 
 ### Display Issues
@@ -168,6 +198,10 @@ Default is 11 minutes after Netatmo update. To change:
 **Problem**: Display update takes very long (>30 seconds)
 
 **Solution**: Normal ePaper refresh takes 15-20 seconds. Watchdog is disabled automatically.
+
+**Problem**: Text doesn't render or appears garbled
+
+**Solution**: Ensure FreeFonts are being used. U8g2 fonts are incompatible with the 1-bit sprite buffer used by the ePaper display.
 
 ### WiFi Issues
 
