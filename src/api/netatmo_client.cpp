@@ -80,8 +80,19 @@ void NetatmoClient::parseIndoorData(JsonObject device, IndoorData& indoor) {
     // Parse trends
     const char* tempTrend = dashboard["temp_trend"] | "unknown";
     const char* pressTrend = dashboard["pressure_trend"] | "unknown";
+    const char* co2Trend = dashboard["co2_trend"];
+
     indoor.temperatureTrend = stringToTrend(tempTrend);
     indoor.pressureTrend = stringToTrend(pressTrend);
+
+    // CO2 trend is not provided by Netatmo API, default to STABLE
+    if (co2Trend && strlen(co2Trend) > 0) {
+        indoor.co2Trend = stringToTrend(co2Trend);
+        ESP_LOGD("netatmo", "Trends - Temp: %s, Pressure: %s, CO2: %s", tempTrend, pressTrend, co2Trend);
+    } else {
+        indoor.co2Trend = Trend::STABLE;
+        ESP_LOGD("netatmo", "Trends - Temp: %s, Pressure: %s, CO2: stable (not provided by API)", tempTrend, pressTrend);
+    }
 
     // Parse min/max temperatures
     indoor.minTemp = dashboard["min_temp"] | 0.0f;
@@ -234,12 +245,6 @@ bool NetatmoClient::getWeatherData(WeatherData& data) {
             parseRainData(rainModule, data.rain);
         }
     }
-
-    // Calculate CO2 trend
-    // Note: This requires additional API call for historical data
-    // For simplicity, we'll use the trend from dashboard if available
-    // In a full implementation, you could call getmeasure API for accurate trend
-    data.indoor.co2Trend = Trend::STABLE;  // Default to stable
 
     ESP_LOGI("netatmo", "Weather data fetch complete");
     return true;

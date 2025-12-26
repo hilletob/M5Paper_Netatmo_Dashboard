@@ -359,7 +359,7 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d %%", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(humidStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_VALUE_Y);
@@ -388,7 +388,7 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     }
 
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d %%", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(humidStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
@@ -435,7 +435,7 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
     char co2Str[16];
-    snprintf(co2Str, sizeof(co2Str), "%dppm", data.co2);
+    snprintf(co2Str, sizeof(co2Str), "%d ppm", data.co2);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y);
@@ -460,7 +460,7 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Luftdruck außen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     char pressStr[16];
-    snprintf(pressStr, sizeof(pressStr), "%dhPa", data.pressure);
+    snprintf(pressStr, sizeof(pressStr), "%d hPa", data.pressure);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y);

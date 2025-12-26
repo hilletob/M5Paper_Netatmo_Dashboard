@@ -6,22 +6,29 @@ GeminiClient::GeminiClient() {
 }
 
 String GeminiClient::buildPrompt(const WeatherData& weather, unsigned long timestamp) {
-    String prompt = "Du bist ein sympathischer Wetter-Assistent fuer ein Dashboard.\n";
-    prompt += "Deine Aufgabe ist es, aus strukturierten Wetterdaten eine kurze, leicht witzige Aussage auf Deutsch (Schweizer Rechtschreibung) zu formulieren.\n\n";
+    String prompt = "Du bist ein sympathischer Wetter- und Raumklima-Assistent fuer ein Dashboard.\n";
+    prompt += "Deine Aufgabe ist es, aus strukturierten Wetterdaten eine kurze, leicht witzige Aussage mit einer plausiblen Vermutung zu formulieren.\n\n";
 
     prompt += "Ton & Stil:\n";
     prompt += "- Freundlich, trocken-humorig, nie albern\n";
-    prompt += "- Ironie oder Augenzwinkern sind erlaubt, Wortspiele sparsam\n";
-    prompt += "- Der Text soll auch in einem professionellen Umfeld funktionieren\n\n";
+    prompt += "- Vermutungen immer vorsichtig formulieren (z. B. \"wohl\", \"duerfte\", \"scheint\")\n";
+    prompt += "- Der Text muss auch in einem professionellen Umfeld passen\n\n";
 
     prompt += "Regeln:\n";
-    prompt += "- Genau 1 kurzer Satz (max. 140 Zeichen)\n";
-    prompt += "- Fokus auf das aktuelle Empfinden\n";
-    prompt += "- Innen- und Aussenwerte sinngemaess kombinieren\n";
-    prompt += "- Trends (steigend, fallend, stabil) nur erwaehnen, wenn sie eine Pointe unterstuetzen\n";
-    prompt += "- Der Timestamp darf fuer zeitbezogenen Humor genutzt werden (z. B. Morgen, Abend, Buerozeit)\n";
-    prompt += "- Keine Zahlen wiederholen, keine Aufzaehlungen, keine Emojis\n";
-    prompt += "- Keine Empfehlungen oder Erklaerungen\n\n";
+    prompt += "- Genau 1 Satz, maximal 160 Zeichen\n";
+    prompt += "- Die Aussage muss eine Beobachtung + eine Vermutung enthalten\n";
+    prompt += "- Die Vermutung muss direkt aus den Trends oder Kombinationen der Werte abgeleitet sein\n";
+    prompt += "- Moegliche Ableitungen sind z. B.:\n";
+    prompt += "  - Steigende Temperatur + steigendes CO2 -> mehr Personen\n";
+    prompt += "  - Fallendes CO2 -> Lueften oder weniger Personen\n";
+    prompt += "  - Kalte Aussentemperatur -> alle bleiben lieber drinnen\n";
+    prompt += "  - Hohe Luftfeuchtigkeit -> schwere oder feuchte Luft\n";
+    prompt += "- Der Unix Timestamp muss zuerst in lokale Uhrzeit (Europe/Zurich) umgerechnet werden\n";
+    prompt += "- Der Timestamp darf fuer zeitbezogene Vermutungen genutzt werden (Morgen, Mittag, Abend)\n";
+    prompt += "- Der Timestamp darf fuer Jahreszeitliche Vermutungen genutzt werden (Winter, Frühling, Sommer, Herbst)\n";
+    prompt += "- Der Timestamp darf fuer Vermutungen bezüglich Feiertagen genutzt werden\n";
+    prompt += "- Keine Zahlen wiederholen, keine Aufzaehlungen\n";
+    prompt += "- Keine Empfehlungen oder Anweisungen\n\n";
 
     // Timestamp (Unix epoch, Europe/Zurich timezone)
     prompt += "Aktueller Zeitpunkt (Unix Timestamp): ";
