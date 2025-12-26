@@ -25,8 +25,7 @@ void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast);
 // New 3-day forecast column
 void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast);
 
-void drawStatusBar(TFT_eSprite& display, uint32_t batteryMv, uint8_t batteryPercent,
-                   unsigned long updateTime);
+void drawStatusBar(TFT_eSprite& display);
 
 // Complete dashboard renderer
 void drawDashboard(TFT_eSprite& display, const DashboardData& data);

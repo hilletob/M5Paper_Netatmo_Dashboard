@@ -50,8 +50,8 @@ void setup() {
     SleepManager::init();
     SleepManager::incrementWakeCount();
 
-    // Initialize battery monitoring
-    Battery::init();
+    // Battery monitoring disabled (ESP32-C3 has no built-in battery ADC)
+    // Battery::init();
 
     // Initialize LittleFS for caching
     if (!DataCache::init()) {
@@ -148,8 +148,8 @@ void setup() {
         }
     }
 
-    // Update battery reading
-    Battery::read(dashboardData.batteryVoltage, dashboardData.batteryPercent);
+    // Battery reading disabled (ESP32-C3 has no built-in battery ADC)
+    // Battery::read(dashboardData.batteryVoltage, dashboardData.batteryPercent);
     dashboardData.updateTime = SleepManager::getEpoch();
 
     // Update display

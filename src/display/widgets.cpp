@@ -575,16 +575,9 @@ void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast) 
     }
 }
 
-void drawStatusBar(TFT_eSprite& display, uint32_t batteryMv, uint8_t batteryPercent, unsigned long updateTime) {
+void drawStatusBar(TFT_eSprite& display) {
+    // Just draw separator line at bottom
     display.drawFastHLine(0, STATUS_BAR_Y, SCREEN_WIDTH, TFT_BLACK);
-
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
-
-    char statusStr[64];
-    snprintf(statusStr, sizeof(statusStr), "Bat: %dmV (%d%%)", batteryMv, batteryPercent);
-    display.drawString(statusStr, MARGIN, STATUS_BAR_Y + 2);
 }
 
 void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
@@ -608,8 +601,8 @@ void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
     // COLUMN 3: 3-DAY FORECAST
     draw3DayForecastColumn(display, data.forecast);
 
-    // Status bar
-    drawStatusBar(display, data.batteryVoltage, data.batteryPercent, data.updateTime);
+    // Status bar (separator line only)
+    drawStatusBar(display);
 }
 
 // Legacy function names for compatibility
