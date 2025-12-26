@@ -85,7 +85,7 @@
 #define GEMINI_API_KEY ""
 #endif
 #ifndef GEMINI_API_URL
-#define GEMINI_API_URL "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
+#define GEMINI_API_URL "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
 #endif
 
 // HTTP Configuration

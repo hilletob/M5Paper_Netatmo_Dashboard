@@ -35,6 +35,13 @@
 #define FORECAST_COL_WIDTH CARD_WIDTH
 #define FORECAST_COL_HEIGHT 422  // SCREEN_HEIGHT - HEADER_HEIGHT - MARGIN - STATUS_BAR_HEIGHT - MARGIN
 
+// Forecast column internal spacing (uses same gap as columns 1 & 2)
+#define FORECAST_SECTION_GAP 8           // Gap between day sections (matches CARD_SPACING)
+#define FORECAST_HEUTE_HEIGHT 128        // HEUTE section height (reduced for tighter fit)
+#define FORECAST_MORGEN_HEIGHT 127       // MORGEN section height
+#define FORECAST_UEBERMORGEN_HEIGHT 127  // UEBERMORGEN section height
+// Math: 128 + 8 + 127 + 8 + 127 = 398px (24px spacing at bottom)
+
 // Card vertical positions - calculated per column
 // Column 1 & 2 rows (adjusted for different card heights)
 #define ROW1_Y (HEADER_HEIGHT + MARGIN)                              // 53

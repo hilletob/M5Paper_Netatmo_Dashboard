@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "../data/weather_data.h"
+#include "../config.h"
 
 class GeminiClient {
 private:

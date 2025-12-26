@@ -6,7 +6,22 @@ GeminiClient::GeminiClient() {
 }
 
 String GeminiClient::buildPrompt(const WeatherData& weather, unsigned long timestamp) {
-    String prompt = "Du bist ein sympathischer Wetter- und Raumklima-Assistent fuer ein Dashboard.\n";
+    // Format timestamp as dd.mm.yyyy hh:mm
+    time_t t = timestamp;
+    struct tm* tm = localtime(&t);
+    char timeStr[20];
+    snprintf(timeStr, sizeof(timeStr), "%02d.%02d.%04d %02d:%02d",
+             tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900,
+             tm->tm_hour, tm->tm_min);
+
+    String  prompt = "Aktuelles Datum / Zeit: ";
+    prompt += timeStr;
+    prompt += "\n\n";
+    prompt += " Ort: ";
+    prompt += LOCATION_NAME;
+    prompt += "\n\n";
+
+    prompt += "Du bist ein sympathischer Wetter- und Raumklima-Assistent fuer ein Dashboard.\n";
     prompt += "Deine Aufgabe ist es, aus strukturierten Wetterdaten eine kurze, leicht witzige Aussage mit einer plausiblen Vermutung zu formulieren.\n\n";
 
     prompt += "Ton & Stil:\n";
@@ -27,15 +42,25 @@ String GeminiClient::buildPrompt(const WeatherData& weather, unsigned long times
     prompt += "- Der Timestamp darf fuer zeitbezogene Vermutungen genutzt werden (Morgen, Mittag, Abend)\n";
     prompt += "- Der Timestamp darf fuer Jahreszeitliche Vermutungen genutzt werden (Winter, Frühling, Sommer, Herbst)\n";
     prompt += "- Der Timestamp darf fuer Vermutungen bezüglich Feiertagen genutzt werden\n";
-    prompt += "- Falls die Luftqualität über 1500 ppm CO2 ist, kannst du manchmal erwähnen dass der Vater am Lüften ist\n";
+
+    // 50% chance to include the "Vater am Lüften" hint (only if CO2 > 1500 ppm)
+    if (weather.indoor.valid && weather.indoor.co2 > 1500 && random(2) == 0) {
+        prompt += "- Die Luftqualität ist schlecht und je nach Trend hat Vater soeben gelüftet oder wird dies demnächst vornehmen\n";
+    }
+
+    // 50% chance to include the "Ofen" hint (only if temp < 20°C)
+    if (weather.indoor.valid && weather.indoor.temperature < 20.0 && random(2) == 0) {
+        prompt += "- Falls die Innentemperatur unter 20°C ist, erwähne dass der Ofen wohl noch etwas eingefeuert werden muss\n";
+    }
+
+    if (random(50) == 0) {
+        prompt += "- Du bist eine Katze und machst Miau Miau\n";
+    }
+
     prompt += "- Keine Zahlen wiederholen, keine Aufzaehlungen\n";
     prompt += "- Keine Empfehlungen oder Anweisungen\n\n";
 
-    // Timestamp (Unix epoch, Europe/Zurich timezone)
-    prompt += "Aktueller Zeitpunkt (Unix Timestamp): ";
-    prompt += String(timestamp);
-    prompt += " Sekunden (Zeitzone: Europe/Zurich)\n\n";
-    prompt += " Ort: Davos";
+
 
     // Weather data
     prompt += "Wetterdaten:\n";

@@ -74,27 +74,34 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 4. Positions "C" after the symbol
 
 **Implementation**:
-- `drawTemperature()` helper: `src/display/widgets.cpp:14-37`
-- Inline rendering for min/max: `src/display/widgets.cpp:248-286` (indoor), `310-348` (outdoor)
-- Inline rendering for forecast: `src/display/widgets.cpp:583-615`
+- `drawTemperature()` helper for large values
+- Inline rendering for min/max temperatures
+- Inline rendering for forecast grid temperatures
 
-**Spacing**: 2 pixels before degree symbol, degree circle at y+3 offset
+**Spacing**: 4 pixels before degree symbol (increased from 2px), degree circle at y+3 offset
 
 **Used in**:
 - Indoor/Outdoor current temperature
 - Indoor/Outdoor min/max temperatures
-- 3-day forecast temperatures
+- 3-day forecast temperatures (all 3 time slots)
 
 ### Umlaut Replacement
 
 **Problem**: Gemini AI generates German text with umlauts.
 
-**Solution**: Automatic replacement in `gemini_client.cpp:188-195`:
+**Solution**: Automatic replacement in `gemini_client.cpp:199-205`:
 - ä → ae, ö → oe, ü → ue
 - Ä → Ae, Ö → Oe, Ü → Ue
 - ß → ss
 
 ## Display Layout
+
+### Header
+
+**Height**: 45px
+**Location name**: Left-aligned, FSS12
+**Date/Time**: Right-aligned, FSS12 (matches location font size)
+**Format**: dd.mm.yyyy hh:mm
 
 ### Widget System
 
@@ -102,11 +109,30 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 
 **Card dimensions**:
 - Width: 256px
-- Height: 95px
+- Heights: Variable (95-175px)
 - Padding: 6px
 - Spacing: 8px
 
 **Layout constants**: `src/display/layout.h`
+
+### Forecast Column (Column 3)
+
+**New Implementation** (2025-12-26):
+- **Individual section borders**: Each day (Heute, Morgen, Uebermorgen) has its own card
+- **Equal heights**: 128px, 127px, 127px with 8px gaps between
+- **No time labels**: Removed 06h, 12h, 18h labels to save space
+- **Always show precipitation**: Displayed for all 3 time slots with "mm" unit
+- **Custom degree symbols**: Temperatures show with circle-based ° and "C"
+- **Fixed time slots**: Show 06h, 12h, 18h data even if in the past (with "-" placeholder)
+- **Grid spacing**: Icons at y+60 (reduced from y+70 for more compact layout)
+
+**Section layout**:
+- Label (Heute/Morgen/Uebermorgen): FSS9 at y+8
+- Daily icon & min/max temp: y+28
+- 3-time grid: y+60
+  - Icon (24×24px): y
+  - Temperature: y+27 (with custom °C)
+  - Precipitation: y+42 (always shown)
 
 ### Widgets
 
@@ -119,11 +145,42 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 | Outdoor Temp | Col 2, Row 1 | Netatmo outdoor module |
 | Outdoor Humidity | Col 2, Row 2 | Netatmo outdoor module |
 | **AI Commentary** | Col 2, Rows 3-4 | **Gemini 2.0 Flash-Exp** |
-| 3-Day Forecast | Col 3 (full height) | met.no API |
+| **3-Day Forecast** | Col 3 (3 cards) | met.no API |
 
 **Removed**: Wind and Rain widgets (replaced by AI widget)
 
 ## API Integration
+
+### Gemini AI API
+
+**Model**: `gemini-2.0-flash-exp`
+**Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent`
+**Authentication**: API key in `x-goog-api-key` header
+**Rate limit**: 15 req/min, 1,500 req/day (free tier)
+
+**Client**: `src/api/gemini_client.cpp`
+
+**Prompt Structure** (Updated 2025-12-26):
+1. **Timestamp**: Formatted as `dd.mm.yyyy hh:mm` (Europe/Zurich)
+2. **Location**: e.g. "Davos"
+3. System instruction: Friendly, dry-humorous German weather assistant
+4. Tone & style guidelines: Professional, trocken-humorig, never albern
+5. Rules: Max 160 chars, 1 sentence, observations + deductions
+6. **Contextual hints** (randomized, 50% chance each):
+   - CO2 > 1500 ppm: Mention ventilation status based on trend
+   - Temperature < 20°C: Mention heating needed
+7. **Easter egg** (2% chance): Cat mode ("Miau Miau")
+8. Weather data: Indoor/outdoor temps, humidity, CO2, pressure with trends
+
+**Response processing**:
+- Trim whitespace
+- Replace umlauts (ä→ae, ö→oe, ü→ue, ß→ss)
+- Display in AI widget with word wrapping
+
+**Contextual Intelligence**:
+- Checks actual sensor values before adding hints
+- 50% random chance prevents repetitive commentary
+- Combines sensor trends with time/season context
 
 ### Netatmo API
 
@@ -139,8 +196,6 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 - Pressure (indoor): From Netatmo `pressure_trend` field
 - **CO2 (indoor)**: Calculated by comparing with cached value (10 ppm threshold)
 
-**Trend calculation**: `src/main.cpp:135-151`
-
 ### met.no (yr.no) API
 
 **Endpoint**: `https://api.met.no/weatherapi/locationforecast/2.0/compact`
@@ -150,32 +205,16 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 
 **Client**: `src/api/meteo_client.cpp`
 
-**Format**: 3-day daily forecast with min/max temperatures, precipitation, wind, and symbol codes
+**Format**: 3-day daily forecast with:
+- Daily min/max temperatures
+- Precipitation sum
+- Dominant weather symbol
+- **3 time slots per day**: 06h, 12h, 18h (fixed, collected regardless of current time)
 
-**HTTP Caching**: Uses `Last-Modified` and `Expires` headers to reduce API calls
-
-### Gemini AI API
-
-**Model**: `gemini-2.0-flash-exp`
-**Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent`
-**Authentication**: API key in `x-goog-api-key` header
-**Rate limit**: 15 req/min, 1,500 req/day (free tier)
-
-**Client**: `src/api/gemini_client.cpp`
-
-**Prompt Structure**:
-1. System instruction: Friendly, dry-humorous German weather assistant
-2. Tone & style guidelines: Professional, trocken-humorig, never albern
-3. Rules: Max 140 chars, 1 sentence, no emojis, no numbers repetition
-4. Context: Unix timestamp, location (Davos)
-5. Weather data: Indoor/outdoor temps, humidity, CO2, pressure with trends
-
-**Response processing**:
-- Trim whitespace
-- Replace umlauts (ä→ae, ö→oe, ü→ue, ß→ss)
-- Display in AI widget with word wrapping
-
-**Line height**: 20px (increased from 16px for better readability)
+**Time slot handling**:
+- API collects all available data for 06h, 12h, 18h
+- Display shows placeholders ("-") for past time slots without data
+- Ensures consistent 3-slot display even if some slots are in the past
 
 ## Data Caching
 
@@ -202,47 +241,42 @@ else → DOWN
 
 ## Recent Changes (2025-12-26)
 
-### Gemini AI Widget Implementation
+### Forecast Widget Redesign
 
 **Changes**:
-1. Replaced Wind and Rain widgets with single AI widget (256×198px)
-2. Added `gemini_client.cpp` for AI API integration
-3. Added `aiCommentary` field to `DashboardData`
-4. Implemented professional German prompt system
-5. Added automatic umlaut replacement for ASCII display
-6. Increased line height to 20px for better readability
+1. **Removed time labels** (06h, 12h, 18h) to save vertical space
+2. **Individual section borders**: Each day has its own card with 8px gaps
+3. **Optimized heights**: 128/127/127px (equal distribution)
+4. **Always show precipitation**: All 3 time slots display precipitation with "mm" unit
+5. **Custom degree symbols**: Forecast temps use circle-based ° + "C"
+6. **Fixed time slots**: Display 06h, 12h, 18h data even if past (with "-" placeholder)
+7. **Tighter spacing**: Grid at y+60 (reduced from y+70)
+8. **Degree symbol spacing**: Increased from 2px to 4px for better readability
 
 **Files modified**:
-- `src/api/gemini_client.{h,cpp}` - NEW
-- `src/api/http_utils.h` - Added `httpPostJSON()` for Gemini
-- `src/data/weather_data.h` - Added `aiCommentary` field
-- `src/config.h` - Added Gemini API constants
-- `src/display/widgets.{h,cpp}` - Replaced Wind/Rain with AI widget
-- `src/main.cpp` - Integrated Gemini client
+- `src/display/layout.h` - Updated section heights and gaps
+- `src/display/widgets.cpp` - Redesigned forecast rendering
 
-### CO2 Trend Calculation
+### Gemini Prompt Intelligence
 
-**Implementation**: `src/main.cpp:113-151`
+**Changes**:
+1. **Timestamp formatting**: Now shows "dd.mm.yyyy hh:mm" instead of Unix timestamp
+2. **Contextual hints**: Only shown when conditions match (CO2 > 1500, temp < 20°C)
+3. **Randomization**: 50% chance for each contextual hint
+4. **Easter egg**: 2% chance for cat mode
+5. **Improved prompt structure**: Timestamp and location at the start
 
-**Logic**:
-1. Load previous CO2 value from cache
-2. Fetch new CO2 value from Netatmo
-3. Calculate difference
-4. Apply 10 ppm threshold for STABLE
-5. Set trend: UP, DOWN, or STABLE
+**Files modified**:
+- `src/api/gemini_client.cpp` - Prompt building with conditional hints
 
-**Reason**: Netatmo API doesn't provide CO2 trend, only temp/pressure trends
+### Header Consistency
 
-### Custom Degree Symbols Everywhere
+**Changes**:
+1. **Unified font sizes**: Date/time now uses FSS12 (same as location name)
+2. **Better visual balance**: Header elements have equal visual weight
 
-**Implementation**: `src/display/widgets.cpp`
-
-**Locations**:
-- Current temperatures: `drawTemperature()` helper
-- Min/max temperatures: Inline rendering with circles
-- Forecast temperatures: Inline rendering with circles
-
-**Reason**: FreeFonts are ASCII-only, no ° character support
+**Files modified**:
+- `src/display/widgets.cpp` - Header font size adjustment
 
 ## Known Issues & Limitations
 
@@ -262,10 +296,10 @@ else → DOWN
 - **Re-init required**: Must call `begin()` before every `update()`
 - **WiFi interference**: Disable WiFi before display operations
 
-### API Limitations
-- **Gemini rate limits**: 15/min, 1500/day (our usage: ~130/day = OK)
-- **Gemini response time**: 3-5 seconds per request
-- **met.no caching**: Respects HTTP cache headers to reduce load
+### Forecast Limitations
+- **Historical data**: met.no API only provides future forecasts
+- **Past time slots**: Show "-" placeholder when no forecast data available
+- **Fixed slots**: Always 06h, 12h, 18h (not customizable)
 
 ## Development Tips
 
@@ -278,7 +312,7 @@ pio run
 pio run --target upload
 
 # Monitor serial output
-pio device monitor -b 115200
+pio device monitor
 ```
 
 ### Serial Debugging
@@ -311,12 +345,12 @@ Look for these log tags:
 | `src/main.cpp` | Main program | Setup, fetch, CO2 trend, display, sleep |
 | `src/config.h` | Default config | WiFi, Netatmo, Gemini, met.no constants |
 | `src/config.local.h` | User credentials | Gitignored, API keys |
-| `src/display/widgets.cpp` | UI rendering | 8 widgets + AI widget + degree symbols |
+| `src/display/widgets.cpp` | UI rendering | Widgets + forecast + degree symbols |
 | `src/display/layout.h` | Layout constants | Coordinates, sizes, spacing |
 | `src/display/fonts.h` | Font aliases | FreeFonts definitions |
 | `src/api/netatmo_client.cpp` | Netatmo API | OAuth2, station data, trends |
-| `src/api/meteo_client.cpp` | met.no API | Forecast, HTTP caching |
-| `src/api/gemini_client.cpp` | Gemini AI | Prompt building, umlaut replacement |
+| `src/api/meteo_client.cpp` | met.no API | Forecast, HTTP caching, 3-time slots |
+| `src/api/gemini_client.cpp` | Gemini AI | Contextual prompts, umlaut replacement |
 | `src/api/http_utils.h` | HTTP helpers | GET, POST JSON |
 | `src/data/weather_data.h` | Data structures | Indoor, Outdoor, Forecast, AI |
 | `src/data/cache.cpp` | Persistent storage | LittleFS JSON cache |
@@ -329,6 +363,7 @@ Look for these log tags:
 - **Color ePaper**: Requires different Seeed_GFX driver
 - **More stations**: Multi-station support with switching
 - **Gemini model upgrade**: Switch to newer models as available
+- **Historical weather data**: Store past readings for trend graphs
 
 ### Not Recommended
 - **U8g2 migration**: Incompatible with current display driver

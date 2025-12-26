@@ -86,7 +86,7 @@ void setup() {
 
         // Subtitle - Medium
         display.setFreeFont(FSS18);  // FreeSans 18pt
-        display.drawString("Davos", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
+        display.drawString(LOCATION_NAME, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
 
         // Status - Small
         display.setFreeFont(FSS12);  // FreeSans 12pt

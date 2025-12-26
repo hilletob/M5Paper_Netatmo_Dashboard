@@ -221,7 +221,7 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
     display.setFreeFont(FSS12);
     display.drawString(location, MARGIN, HEADER_Y + 8);
 
-    // Date/time on right
+    // Date/time on right (same size as location)
     if (timestamp > 0) {
         time_t t = timestamp;
         struct tm* tm = localtime(&t);
@@ -230,7 +230,7 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
                 tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900,
                 tm->tm_hour, tm->tm_min);
         display.setTextDatum(TR_DATUM);
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);  // Match location font size
         display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 8);
     }
 }
@@ -590,29 +590,43 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
     for (int i = 0; i < 3; i++) {
         int cellX = x + (i * cellWidth);
         const DayTimeForecast& dt = times[i];
+        bool hasData = (dt.hour != 0);  // hour == 0 means no data
 
-        // Time label
-        char timeStr[6];
-        snprintf(timeStr, sizeof(timeStr), "%02dh", dt.hour);
         display.setFreeFont(FSS9);
         display.setTextDatum(TC_DATUM);
-        display.drawString(timeStr, cellX + cellWidth/2, y);
 
-        // Weather icon (24×24px)
-        const char* icon = getIconFromCode(dt.symbolCode);
-        drawWeatherIcon(display, cellX + cellWidth/2 - 12, y + 15, icon, 24);
+        if (hasData) {
+            // Weather icon (24×24px)
+            const char* icon = getIconFromCode(dt.symbolCode);
+            drawWeatherIcon(display, cellX + cellWidth/2 - 12, y, icon, 24);
 
-        // Temperature
-        char tempStr[6];
-        snprintf(tempStr, sizeof(tempStr), "%d°", dt.temperature);
-        display.setFreeFont(FSS9);
-        display.drawString(tempStr, cellX + cellWidth/2, y + 42);
+            // Temperature with custom degree symbol (matching other widgets)
+            char tempStr[6];
+            snprintf(tempStr, sizeof(tempStr), "%d", dt.temperature);
+            int tempTextY = y + 27;
 
-        // Precipitation (if > 0)
-        if (dt.precipitationMm > 0) {
-            char precipStr[8];
+            // Draw temperature number
+            int tempWidth = display.textWidth(tempStr);
+            int startX = cellX + cellWidth/2 - (tempWidth + 12) / 2;  // Center: text + spacing + degree + C
+            display.setTextDatum(TL_DATUM);
+            display.drawString(tempStr, startX, tempTextY);
+
+            // Draw degree symbol (two circles) with spacing
+            int degX = startX + tempWidth + 4;  // Increased spacing from 2 to 4
+            display.drawCircle(degX, tempTextY + 3, 2, TFT_BLACK);
+            display.drawCircle(degX, tempTextY + 3, 3, TFT_BLACK);
+
+            // Draw "C"
+            display.drawString("C", degX + 5, tempTextY);
+
+            // Precipitation with unit (always show)
+            display.setTextDatum(TC_DATUM);
+            char precipStr[10];
             snprintf(precipStr, sizeof(precipStr), "%.1fmm", dt.precipitationMm / 10.0);
-            display.drawString(precipStr, cellX + cellWidth/2, y + 60);
+            display.drawString(precipStr, cellX + cellWidth/2, y + 42);
+        } else {
+            // Show placeholder for missing data
+            display.drawString("-", cellX + cellWidth/2, y + 15);
         }
     }
 }
@@ -623,28 +637,28 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
     display.setTextColor(TFT_BLACK, TFT_WHITE);
     display.setTextDatum(TL_DATUM);
 
-    // Day header (HEUTE = bold, others = normal)
-    display.setFreeFont(isToday ? FSSB12 : FSS12);
-    display.drawString(dayLabel, x + 6, y);
+    // Day header (use FSS9 to match other widget labels like "Innen")
+    display.setFreeFont(FSS9);
+    display.drawString(dayLabel, x + CARD_PADDING, y + CARD_LABEL_Y);
 
     if (!day.valid) {
         display.setFreeFont(FSS9);
-        display.drawString("n/a", x + 6, y + 20);
+        display.drawString("n/a", x + CARD_PADDING, y + CARD_VALUE_Y);
         return;
     }
 
-    // Icon size (HEUTE = 30×30, others = 24×24)
-    int iconSize = isToday ? 30 : 24;
-    int iconY = y + (isToday ? 22 : 18);
+    // Icon size (24×24 for all sections - consistent sizing)
+    int iconSize = 24;
+    int iconY = y + CARD_VALUE_Y;  // Align with other cards (28px from top)
 
     // Daily weather icon
     const char* iconName = getIconFromCode(day.symbolCode);
-    drawWeatherIcon(display, x + 6, iconY, iconName, iconSize);
+    drawWeatherIcon(display, x + CARD_PADDING, iconY, iconName, iconSize);
 
     // Temperature range with custom degree symbols
-    display.setFreeFont(isToday ? FSSB12 : FSS12);
+    display.setFreeFont(FSS12);
     display.setTextDatum(TL_DATUM);
-    int tempX = x + 6 + iconSize + 8;
+    int tempX = x + CARD_PADDING + iconSize + 8;
     int tempY = iconY + 5;
 
     // Draw min temperature
@@ -684,29 +698,28 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
         display.drawString(precipStr, x + FORECAST_COL_WIDTH - 6, iconY + 5);
     }
 
-    // 3-time grid (06h, 12h, 18h)
-    int gridY = y + (isToday ? 70 : 55);
-    drawDayTimeGrid(display, day.times, x + 6, gridY, FORECAST_COL_WIDTH - 12);
+    // 3-time grid (06h, 12h, 18h) - now without time labels, more compact
+    int gridY = y + 60;  // Reduced spacing from daily forecast section
+    drawDayTimeGrid(display, day.times, x + CARD_PADDING, gridY, FORECAST_COL_WIDTH - 12);
 }
 
 // Main 3-day forecast column
 void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast) {
-    // Draw tall card border
-    display.drawRect(FORECAST_COL_X, FORECAST_COL_Y, FORECAST_COL_WIDTH, FORECAST_COL_HEIGHT, TFT_BLACK);
+    // Three daily sections with individual borders (8px gaps between)
+    const char* dayLabels[] = {"Heute", "Morgen", "Uebermorgen"};
+    const int sectionHeights[] = {FORECAST_HEUTE_HEIGHT, FORECAST_MORGEN_HEIGHT, FORECAST_UEBERMORGEN_HEIGHT};
 
-    // Three daily sections (no header, start at top)
-    const char* dayLabels[] = {"HEUTE", "MORGEN", "UEBERMORGEN"};
+    // Calculate dynamic Y-positions with 8px gaps (matching CARD_SPACING)
     int yPositions[] = {
-        FORECAST_COL_Y + 6,       // HEUTE: starts at top
-        FORECAST_COL_Y + 146,     // MORGEN
-        FORECAST_COL_Y + 271      // UEBERMORGEN
+        FORECAST_COL_Y,  // HEUTE starts at top
+        FORECAST_COL_Y + FORECAST_HEUTE_HEIGHT + FORECAST_SECTION_GAP,  // MORGEN
+        FORECAST_COL_Y + FORECAST_HEUTE_HEIGHT + FORECAST_SECTION_GAP +
+            FORECAST_MORGEN_HEIGHT + FORECAST_SECTION_GAP  // UEBERMORGEN
     };
 
     for (int i = 0; i < 3; i++) {
-        // Draw separator between days
-        if (i > 0) {
-            display.drawFastHLine(FORECAST_COL_X, yPositions[i] - 1, FORECAST_COL_WIDTH, TFT_BLACK);
-        }
+        // Draw individual border for each section (like other cards)
+        display.drawRect(FORECAST_COL_X, yPositions[i], FORECAST_COL_WIDTH, sectionHeights[i], TFT_BLACK);
 
         drawDailyForecastSection(display, forecast.days[i],
                                  FORECAST_COL_X, yPositions[i],
