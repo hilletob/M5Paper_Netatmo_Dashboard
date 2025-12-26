@@ -10,6 +10,32 @@ void drawCard(TFT_eSprite& display, int x, int y) {
     display.drawRect(x, y, CARD_WIDTH, CARD_HEIGHT, TFT_BLACK);
 }
 
+// Helper to draw temperature with degree symbol (drawn as circle)
+void drawTemperature(TFT_eSprite& display, float temp, int16_t x, int16_t y,
+                     const GFXfont* valueFont, const GFXfont* unitFont, uint8_t datum) {
+    char tempStr[16];
+    snprintf(tempStr, sizeof(tempStr), "%.1f", temp);
+
+    display.setTextDatum(datum);
+    display.setFreeFont(valueFont);
+
+    // Draw temperature value
+    display.drawString(tempStr, x, y);
+
+    // Measure text width to position degree symbol
+    int16_t textWidth = display.textWidth(tempStr);
+
+    // Draw degree symbol as small circle (positioned at top-right of number)
+    int16_t degX = x + textWidth + 6;  // 6px spacing
+    int16_t degY = y + 3;              // Offset from top
+    display.drawCircle(degX, degY, 3, TFT_BLACK);
+    display.drawCircle(degX, degY, 2, TFT_BLACK);  // Thicker circle
+
+    // Draw "C" after degree symbol
+    display.setFreeFont(unitFont);
+    display.drawString("C", degX + 7, y);
+}
+
 // Helper to draw trend arrow using geometric shapes
 void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
     int cx = x + 12;  // Center X
@@ -210,16 +236,11 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     display.setFreeFont(FSS9);
     display.drawString("Innen", INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_LABEL_Y);
 
-    // Large temperature value
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1f", data.temperature);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
-    display.drawString(tempStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_VALUE_Y);
-
-    // Unit (positioned further right)
-    display.setFreeFont(FSS12);
-    display.drawString("°C", INDOOR_TEMP_X + 160, INDOOR_TEMP_Y + CARD_VALUE_Y + 10);
+    // Large temperature value with degree symbol
+    drawTemperature(display, data.temperature,
+                    INDOOR_TEMP_X + CARD_PADDING,
+                    INDOOR_TEMP_Y + CARD_VALUE_Y,
+                    FSSB18, FSS12, TL_DATUM);
 
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
@@ -248,13 +269,10 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
         return;
     }
 
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1f", data.temperature);
-    display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
-    display.drawString(tempStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS12);
-    display.drawString("°C", OUTDOOR_TEMP_X + 160, OUTDOOR_TEMP_Y + CARD_VALUE_Y + 10);
+    drawTemperature(display, data.temperature,
+                    OUTDOOR_TEMP_X + CARD_PADDING,
+                    OUTDOOR_TEMP_Y + CARD_VALUE_Y,
+                    FSSB18, FSS12, TL_DATUM);
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
@@ -278,12 +296,10 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(humidStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS12);
-    display.drawString("%", INDOOR_HUMID_X + 140, INDOOR_HUMID_Y + CARD_VALUE_Y + 10);
 
     // Climate status
     const char* status = getHumidityComfort(data.humidity);
@@ -309,12 +325,10 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     }
 
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(humidStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS12);
-    display.drawString("%", OUTDOOR_HUMID_X + 140, OUTDOOR_HUMID_Y + CARD_VALUE_Y + 10);
 
     // Dew point calculation (Magnus formula)
     float a = 17.27;
@@ -340,12 +354,10 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
     char co2Str[16];
-    snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
+    snprintf(co2Str, sizeof(co2Str), "%dppm", data.co2);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS9);
-    display.drawString("ppm", AIR_QUALITY_X + 180, AIR_QUALITY_Y + CARD_VALUE_Y + 10);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 
@@ -367,12 +379,10 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     display.drawString("Luftdruck außen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     char pressStr[16];
-    snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
+    snprintf(pressStr, sizeof(pressStr), "%dhPa", data.pressure);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS9);
-    display.drawString("hPa", PRESSURE_X + 180, PRESSURE_Y + CARD_VALUE_Y + 10);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 
@@ -410,12 +420,10 @@ void drawWindWidget(TFT_eSprite& display, const WindData& data) {
 
     // Wind speed
     char speedStr[16];
-    snprintf(speedStr, sizeof(speedStr), "%d", data.strength);
+    snprintf(speedStr, sizeof(speedStr), "%dkm/h", data.strength);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(speedStr, WIND_X + CARD_PADDING, WIND_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS9);
-    display.drawString("km/h", WIND_X + 100, WIND_Y + CARD_VALUE_Y + 10);
 
     // Wind direction as compass text (N, NO, O, SO, S, SW, W, NW)
     const char* directions[] = {"N", "NO", "O", "SO", "S", "SW", "W", "NW"};
@@ -448,13 +456,11 @@ void drawRainWidget(TFT_eSprite& display, const RainData& data) {
     }
 
     // Current rain (24h sum displayed as main value)
-    char rainStr[16];
-    snprintf(rainStr, sizeof(rainStr), "%.1f", data.sum24h);
+    char rainStr[24];
+    snprintf(rainStr, sizeof(rainStr), "%.1fmm/24h", data.sum24h);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
     display.drawString(rainStr, RAIN_X + CARD_PADDING, RAIN_Y + CARD_VALUE_Y);
-    display.setFreeFont(FSS9);
-    display.drawString("mm/24h", RAIN_X + 100, RAIN_Y + CARD_VALUE_Y + 10);
 
     // Details: 1h sum
     char detailStr[32];
@@ -525,7 +531,7 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
 
     // Temperature range
     char tempStr[20];
-    snprintf(tempStr, sizeof(tempStr), "%d°/%d°C", day.tempMin, day.tempMax);
+    snprintf(tempStr, sizeof(tempStr), "%d°C/%d°C", day.tempMin, day.tempMax);
     display.setFreeFont(isToday ? FSSB12 : FSS12);
     display.setTextDatum(TL_DATUM);
     display.drawString(tempStr, x + 6 + iconSize + 8, iconY + 5);
