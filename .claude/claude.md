@@ -57,9 +57,14 @@ Weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display showing Netatmo ind
 **Character support**: ASCII only (0x20-0x7E)
 **Limitation**: No German umlauts (ä, ö, ü), no degree symbol (°)
 
-**Fonts in use**:
-- `FSS9`, `FSS12`, `FSS18`, `FSS24` - FreeSans (labels)
+**Fonts in use** (updated 2025-12-27):
+- `FSS9`, `FSS12`, `FSS18`, `FSS24` - FreeSans (labels, units)
 - `FSSB9`, `FSSB12`, `FSSB18`, `FSSB24` - FreeSansBold (values, titles)
+
+**Font pairing for values + units**:
+- Large widgets: FSSB18 (value) + FSS18 (unit) - e.g., **65** %
+- Medium widgets: FSSB12 (value) + FSS12 (unit) - e.g., **-9** °C
+- Small text: FSSB9 (value) + FSS9 (unit) - e.g., **2.5** mm
 
 **Defined in**: `src/display/fonts.h`
 
@@ -277,6 +282,35 @@ else → DOWN
 
 **Files modified**:
 - `src/display/widgets.cpp` - Header font size adjustment
+
+## Recent Changes (2025-12-27)
+
+### Font Styling and Visual Hierarchy
+
+**Changes**:
+1. **Bold values, non-bold units**: All sensor values use bold fonts (FSSB18, FSSB12, FSSB9), units use non-bold (FSS18, FSS12, FSS9)
+2. **Proper alignment**: Fixed unit positioning by measuring text width before font switch
+3. **Consistent sizing**: Units use FSS18 (not FSS12) to match FSSB18 height
+4. **Examples**:
+   - Humidity: **65** % (value FSSB18, unit FSS18)
+   - CO2: **850** ppm (value FSSB18, unit FSS18)
+   - Pressure: **1015** hPa (value FSSB18, unit FSS18)
+   - Dew Point: **12.3** °C (value FSSB9, unit FSS9)
+   - Forecast temps: **-9** °C (value FSSB9/FSSB12, unit FSS9/FSS12)
+   - Precipitation: **2.5** mm (value FSSB9, unit FSS9 with space)
+
+**Files modified**:
+- `src/display/widgets.cpp` - Font styling for all widgets and forecast
+
+### Gemini API Timeout Increase
+
+**Changes**:
+1. **Response timeout**: Increased from 10s to 30s for AI generation
+2. **Connection timeout**: Remains at 10s
+3. **Reason**: Prevents "read timeout" errors for longer AI responses with contextual hints
+
+**Files modified**:
+- `src/api/http_utils.h` - Updated `httpPostJSON()` timeout settings
 
 ## Known Issues & Limitations
 

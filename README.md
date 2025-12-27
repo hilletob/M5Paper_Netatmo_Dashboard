@@ -218,15 +218,20 @@ Temperature displays use a custom rendering approach that:
 
 **Note**: We attempted migration to U8g2 fonts for UTF-8 support but encountered rendering issues with 1-bit sprite buffers. FreeFonts remain the stable solution.
 
-### Combined Units
+### Font Styling and Units
 
-All units are displayed directly after values with no spacing:
-- Temperature: `18.3 °C` (degree symbol custom-drawn)
-- Humidity: `65%`
-- CO2: `850ppm`
-- Pressure: `1015hPa`
-- Wind: `12km/h`
-- Rain: `2.5mm/24h`
+**Visual hierarchy** (updated 2025-12-27):
+- **Values**: Bold font (FSSB18, FSSB12, FSSB9) for emphasis
+- **Units**: Non-bold font (FSS18, FSS12, FSS9) for subtle appearance
+- **Spacing**: 4px between value and unit
+
+**Examples**:
+- Temperature: **18.3** °C (value bold, degree symbol + C non-bold)
+- Humidity: **65** % (value bold, % non-bold)
+- CO2: **850** ppm (value bold, ppm non-bold)
+- Pressure: **1015** hPa (value bold, hPa non-bold)
+- Dew Point: **12.3** °C (value bold, °C non-bold)
+- Precipitation: **2.5** mm (value bold, mm non-bold with space)
 
 ## Troubleshooting
 
@@ -325,6 +330,7 @@ Look for these key log messages:
 - **Authentication**: API key in `x-goog-api-key` header
 - **Rate Limit**: 15 req/min, 1500 req/day (free tier)
 - **Response**: Context-aware German weather commentary (max 160 chars)
+- **Timeout**: 30s response timeout, 10s connection timeout (updated 2025-12-27)
 - **Contextual Intelligence** (updated 2025-12-26):
   - Conditional hints: Only mentions ventilation when CO2 > 1500 ppm
   - Temperature hints: Only mentions heating when temp < 20°C
