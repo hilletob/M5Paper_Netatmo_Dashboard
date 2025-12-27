@@ -160,8 +160,8 @@ public:
 
         HTTPClient http;
         http.setReuse(false);
-        http.setTimeout(10000);  // 10 second timeout for Gemini
-        http.setConnectTimeout(10000);
+        http.setTimeout(30000);  // 30 second timeout for Gemini AI generation
+        http.setConnectTimeout(10000);  // 10 second connection timeout
         http.setUserAgent(HTTP_USER_AGENT);
 
         if (!http.begin(client, url)) {

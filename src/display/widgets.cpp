@@ -415,11 +415,20 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
     display.setFreeFont(FSS9);
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
+    // Draw humidity value (bold) and unit (non-bold) separately
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d %%", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
-    display.drawString(humidStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_VALUE_Y);
+    int valueX = INDOOR_HUMID_X + CARD_PADDING;
+    int valueY = INDOOR_HUMID_Y + CARD_VALUE_Y;
+    display.drawString(humidStr, valueX, valueY);
+
+    // Draw unit in non-bold (measure width before font switch)
+    int valueWidth = display.textWidth(humidStr);
+    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    int unitX = valueX + valueWidth + 4;
+    display.drawString("%", unitX, valueY);
 
     // Climate status
     const char* status = getHumidityComfort(data.humidity);
@@ -444,11 +453,20 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
         return;
     }
 
+    // Draw humidity value (bold) and unit (non-bold) separately
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d %%", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
-    display.drawString(humidStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
+    int valueX = OUTDOOR_HUMID_X + CARD_PADDING;
+    int valueY = OUTDOOR_HUMID_Y + CARD_VALUE_Y;
+    display.drawString(humidStr, valueX, valueY);
+
+    // Draw unit in non-bold (measure width before font switch)
+    int valueWidth = display.textWidth(humidStr);
+    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    int unitX = valueX + valueWidth + 4;
+    display.drawString("%", unitX, valueY);
 
     // Dew point calculation (Magnus formula)
     float a = 17.27;
@@ -456,19 +474,20 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     float alpha = ((a * data.temperature) / (b + data.temperature)) + log(data.humidity / 100.0);
     float dewPoint = (b * alpha) / (a - alpha);
 
-    // Draw dew point with custom degree symbol
+    // Draw dew point with custom degree symbol (value bold, unit non-bold)
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSS9);
     int dewX = OUTDOOR_HUMID_X + CARD_PADDING;
     int dewY = OUTDOOR_HUMID_Y + CARD_DETAIL_Y;
 
-    // Draw "Taupunkt: "
+    // Draw "Taupunkt: " in non-bold
     display.drawString("Taupunkt: ", dewX, dewY);
     dewX += display.textWidth("Taupunkt: ");
 
-    // Draw temperature value
+    // Draw temperature value in bold
     char dewTempStr[10];
     snprintf(dewTempStr, sizeof(dewTempStr), "%.1f", dewPoint);
+    display.setFreeFont(FSSB9);
     display.drawString(dewTempStr, dewX, dewY);
     dewX += display.textWidth(dewTempStr) + 5;
 
@@ -477,7 +496,8 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     display.drawCircle(dewX, dewY + 3, 3, TFT_BLACK);
     dewX += 5;
 
-    // Draw "C"
+    // Draw "C" in non-bold
+    display.setFreeFont(FSS9);
     display.drawString("C", dewX, dewY);
 }
 
@@ -491,11 +511,20 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
     display.setFreeFont(FSS9);
     display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
+    // Draw CO2 value (bold) and unit (non-bold) separately
     char co2Str[16];
-    snprintf(co2Str, sizeof(co2Str), "%d ppm", data.co2);
+    snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
-    display.drawString(co2Str, AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_VALUE_Y);
+    int valueX = AIR_QUALITY_X + CARD_PADDING;
+    int valueY = AIR_QUALITY_Y + CARD_VALUE_Y;
+    display.drawString(co2Str, valueX, valueY);
+
+    // Draw unit in non-bold (measure width before font switch)
+    int valueWidth = display.textWidth(co2Str);
+    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    int unitX = valueX + valueWidth + 4;
+    display.drawString("ppm", unitX, valueY);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 }
@@ -510,11 +539,20 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
     display.setFreeFont(FSS9);
     display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
+    // Draw pressure value (bold) and unit (non-bold) separately
     char pressStr[16];
-    snprintf(pressStr, sizeof(pressStr), "%d hPa", data.pressure);
+    snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSSB18);
-    display.drawString(pressStr, PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_VALUE_Y);
+    int valueX = PRESSURE_X + CARD_PADDING;
+    int valueY = PRESSURE_Y + CARD_VALUE_Y;
+    display.drawString(pressStr, valueX, valueY);
+
+    // Draw unit in non-bold (measure width before font switch)
+    int valueWidth = display.textWidth(pressStr);
+    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    int unitX = valueX + valueWidth + 4;
+    display.drawString("hPa", unitX, valueY);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 }
@@ -605,7 +643,8 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
             snprintf(tempStr, sizeof(tempStr), "%d", dt.temperature);
             int tempTextY = y + 27;
 
-            // Draw temperature number
+            // Draw temperature number in bold
+            display.setFreeFont(FSSB9);
             int tempWidth = display.textWidth(tempStr);
             int startX = cellX + cellWidth/2 - (tempWidth + 12) / 2;  // Center: text + spacing + degree + C
             display.setTextDatum(TL_DATUM);
@@ -616,14 +655,31 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
             display.drawCircle(degX, tempTextY + 3, 2, TFT_BLACK);
             display.drawCircle(degX, tempTextY + 3, 3, TFT_BLACK);
 
-            // Draw "C"
+            // Draw "C" in non-bold
+            display.setFreeFont(FSS9);
             display.drawString("C", degX + 5, tempTextY);
 
-            // Precipitation with unit (always show)
-            display.setTextDatum(TC_DATUM);
+            // Precipitation with unit (value bold, unit non-bold)
             char precipStr[10];
-            snprintf(precipStr, sizeof(precipStr), "%.1fmm", dt.precipitationMm / 10.0);
-            display.drawString(precipStr, cellX + cellWidth/2, y + 42);
+            snprintf(precipStr, sizeof(precipStr), "%.1f", dt.precipitationMm / 10.0);
+
+            // Calculate centered position for value + space + unit
+            display.setFreeFont(FSSB9);
+            int precipValueWidth = display.textWidth(precipStr);
+            display.setFreeFont(FSS9);
+            int spaceWidth = display.textWidth(" ");
+            int precipUnitWidth = display.textWidth("mm");
+            int totalWidth = precipValueWidth + spaceWidth + precipUnitWidth;
+            int precipStartX = cellX + cellWidth/2 - totalWidth/2;
+
+            // Draw value in bold
+            display.setFreeFont(FSSB9);
+            display.setTextDatum(TL_DATUM);
+            display.drawString(precipStr, precipStartX, y + 42);
+
+            // Draw unit in non-bold with space
+            display.setFreeFont(FSS9);
+            display.drawString(" mm", precipStartX + precipValueWidth, y + 42);
         } else {
             // Show placeholder for missing data
             display.drawString("-", cellX + cellWidth/2, y + 15);
@@ -655,15 +711,15 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
     const char* iconName = getIconFromCode(day.symbolCode);
     drawWeatherIcon(display, x + CARD_PADDING, iconY, iconName, iconSize);
 
-    // Temperature range with custom degree symbols
-    display.setFreeFont(FSS12);
+    // Temperature range with custom degree symbols (values bold, units non-bold)
     display.setTextDatum(TL_DATUM);
     int tempX = x + CARD_PADDING + iconSize + 8;
     int tempY = iconY + 5;
 
-    // Draw min temperature
+    // Draw min temperature in bold
     char tempStr[10];
     snprintf(tempStr, sizeof(tempStr), "%d", day.tempMin);
+    display.setFreeFont(FSSB12);
     display.drawString(tempStr, tempX, tempY);
     tempX += display.textWidth(tempStr) + 5;
 
@@ -672,12 +728,14 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
     display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
     tempX += 5;
 
-    // Draw "C/"
+    // Draw "C/" in non-bold
+    display.setFreeFont(FSS12);
     display.drawString("C/", tempX, tempY);
     tempX += display.textWidth("C/");
 
-    // Draw max temperature
+    // Draw max temperature in bold
     snprintf(tempStr, sizeof(tempStr), "%d", day.tempMax);
+    display.setFreeFont(FSSB12);
     display.drawString(tempStr, tempX, tempY);
     tempX += display.textWidth(tempStr) + 5;
 
@@ -686,16 +744,32 @@ void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
     display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
     tempX += 5;
 
-    // Draw "C"
+    // Draw "C" in non-bold
+    display.setFreeFont(FSS12);
     display.drawString("C", tempX, tempY);
 
-    // Precipitation (if > 0)
+    // Precipitation (if > 0) - value bold, unit non-bold
     if (day.precipSum > 0) {
         char precipStr[16];
-        snprintf(precipStr, sizeof(precipStr), "%.1fmm", day.precipSum / 10.0);
+        snprintf(precipStr, sizeof(precipStr), "%.1f", day.precipSum / 10.0);
+
+        // Calculate position for right-aligned text
+        display.setFreeFont(FSSB9);
+        int valueWidth = display.textWidth(precipStr);
         display.setFreeFont(FSS9);
-        display.setTextDatum(TR_DATUM);
-        display.drawString(precipStr, x + FORECAST_COL_WIDTH - 6, iconY + 5);
+        int spaceWidth = display.textWidth(" ");
+        int unitWidth = display.textWidth("mm");
+        int totalWidth = valueWidth + spaceWidth + unitWidth;
+        int precipX = x + FORECAST_COL_WIDTH - 6 - totalWidth;
+
+        // Draw value in bold
+        display.setFreeFont(FSSB9);
+        display.setTextDatum(TL_DATUM);
+        display.drawString(precipStr, precipX, iconY + 5);
+
+        // Draw unit in non-bold with space
+        display.setFreeFont(FSS9);
+        display.drawString(" mm", precipX + valueWidth, iconY + 5);
     }
 
     // 3-time grid (06h, 12h, 18h) - now without time labels, more compact
