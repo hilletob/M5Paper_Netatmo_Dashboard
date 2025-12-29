@@ -6,8 +6,8 @@
 #include <time.h>
 
 // Helper to draw a card border
-void drawCard(TFT_eSprite& display, int x, int y) {
-    display.drawRect(x, y, CARD_WIDTH, CARD_HEIGHT, TFT_BLACK);
+void drawCard(M5EPD_Canvas& display, int x, int y, int height) {
+    display.drawRect(x, y, CARD_WIDTH, height, 15);
 }
 
 // Helper to format timestamp as time (HH:MM)
@@ -22,7 +22,7 @@ void formatTime(unsigned long timestamp, char* buffer, size_t bufferSize) {
 }
 
 // Helper to draw temperature with degree symbol (drawn as circle)
-void drawTemperature(TFT_eSprite& display, float temp, int16_t x, int16_t y,
+void drawTemperature(M5EPD_Canvas& display, float temp, int16_t x, int16_t y,
                      const GFXfont* valueFont, const GFXfont* unitFont, uint8_t datum) {
     char tempStr[16];
     snprintf(tempStr, sizeof(tempStr), "%.1f", temp);
@@ -39,8 +39,8 @@ void drawTemperature(TFT_eSprite& display, float temp, int16_t x, int16_t y,
     // Draw degree symbol as small circle (positioned at top-right of number)
     int16_t degX = x + textWidth + 6;  // 6px spacing
     int16_t degY = y + 3;              // Offset from top
-    display.drawCircle(degX, degY, 3, TFT_BLACK);
-    display.drawCircle(degX, degY, 2, TFT_BLACK);  // Thicker circle
+    display.drawCircle(degX, degY, 3, 15);
+    display.drawCircle(degX, degY, 2, 15);  // Thicker circle
 
     // Draw "C" after degree symbol
     display.setFreeFont(unitFont);
@@ -48,7 +48,7 @@ void drawTemperature(TFT_eSprite& display, float temp, int16_t x, int16_t y,
 }
 
 // Helper to draw trend arrow using geometric shapes
-void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
+void drawTrendArrow(M5EPD_Canvas& display, int x, int y, Trend trend) {
     int cx = x + 12;  // Center X
     int cy = y + 12;  // Center Y
 
@@ -56,37 +56,37 @@ void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
         case Trend::UP:
             // Diagonal arrow pointing up-right (↗)
             // Shaft
-            display.drawLine(cx - 6, cy + 6, cx + 6, cy - 6, TFT_BLACK);
-            display.drawLine(cx - 5, cy + 6, cx + 6, cy - 5, TFT_BLACK);
-            display.drawLine(cx - 6, cy + 5, cx + 5, cy - 6, TFT_BLACK);
+            display.drawLine(cx - 6, cy + 6, cx + 6, cy - 6, 15);
+            display.drawLine(cx - 5, cy + 6, cx + 6, cy - 5, 15);
+            display.drawLine(cx - 6, cy + 5, cx + 5, cy - 6, 15);
             // Arrowhead
             display.fillTriangle(cx + 6, cy - 6,
                                 cx + 6, cy - 2,
-                                cx + 2, cy - 6, TFT_BLACK);
+                                cx + 2, cy - 6, 15);
             break;
 
         case Trend::DOWN:
             // Diagonal arrow pointing down-right (↘)
             // Shaft
-            display.drawLine(cx - 6, cy - 6, cx + 6, cy + 6, TFT_BLACK);
-            display.drawLine(cx - 5, cy - 6, cx + 6, cy + 5, TFT_BLACK);
-            display.drawLine(cx - 6, cy - 5, cx + 5, cy + 6, TFT_BLACK);
+            display.drawLine(cx - 6, cy - 6, cx + 6, cy + 6, 15);
+            display.drawLine(cx - 5, cy - 6, cx + 6, cy + 5, 15);
+            display.drawLine(cx - 6, cy - 5, cx + 5, cy + 6, 15);
             // Arrowhead
             display.fillTriangle(cx + 6, cy + 6,
                                 cx + 6, cy + 2,
-                                cx + 2, cy + 6, TFT_BLACK);
+                                cx + 2, cy + 6, 15);
             break;
 
         case Trend::STABLE:
             // Horizontal arrow pointing right (→)
             // Shaft
-            display.drawLine(cx - 8, cy, cx + 6, cy, TFT_BLACK);
-            display.drawLine(cx - 8, cy - 1, cx + 6, cy - 1, TFT_BLACK);
-            display.drawLine(cx - 8, cy + 1, cx + 6, cy + 1, TFT_BLACK);
+            display.drawLine(cx - 8, cy, cx + 6, cy, 15);
+            display.drawLine(cx - 8, cy - 1, cx + 6, cy - 1, 15);
+            display.drawLine(cx - 8, cy + 1, cx + 6, cy + 1, 15);
             // Arrowhead
             display.fillTriangle(cx + 6, cy,
                                 cx + 2, cy - 4,
-                                cx + 2, cy + 4, TFT_BLACK);
+                                cx + 2, cy + 4, 15);
             break;
 
         default:
@@ -94,7 +94,7 @@ void drawTrendArrow(TFT_eSprite& display, int x, int y, Trend trend) {
     }
 }
 
-void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, int size) {
+void drawWeatherIcon(M5EPD_Canvas& display, int x, int y, const char* iconName, int size) {
     // Center point for the icon
     int cx = x + size / 2;
     int cy = y + size / 2;
@@ -105,7 +105,7 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
         int rayLength = size / 5;
 
         // Draw sun circle (filled)
-        display.fillCircle(cx, cy, sunRadius, TFT_BLACK);
+        display.fillCircle(cx, cy, sunRadius, 15);
 
         // Draw 8 rays around the sun
         for (int i = 0; i < 8; i++) {
@@ -116,9 +116,9 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
             int outerY = cy + sin(angle) * (sunRadius + rayLength);
 
             // Draw thick rays
-            display.drawLine(innerX, innerY, outerX, outerY, TFT_BLACK);
-            display.drawLine(innerX + 1, innerY, outerX + 1, outerY, TFT_BLACK);
-            display.drawLine(innerX, innerY + 1, outerX, outerY + 1, TFT_BLACK);
+            display.drawLine(innerX, innerY, outerX, outerY, 15);
+            display.drawLine(innerX + 1, innerY, outerX + 1, outerY, 15);
+            display.drawLine(innerX, innerY + 1, outerX, outerY + 1, 15);
         }
     }
     else if (strcmp(iconName, "partly_cloudy") == 0) {
@@ -128,8 +128,8 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
         int sunY = cy - size / 6;
 
         // Draw partial sun (upper left)
-        display.drawCircle(sunX, sunY, sunRadius, TFT_BLACK);
-        display.drawCircle(sunX, sunY, sunRadius - 1, TFT_BLACK);
+        display.drawCircle(sunX, sunY, sunRadius, 15);
+        display.drawCircle(sunX, sunY, sunRadius - 1, 15);
 
         // Draw 4 sun rays (only visible ones)
         for (int i = 0; i < 4; i++) {
@@ -138,47 +138,47 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
             int innerY = sunY + sin(angle) * (sunRadius + 1);
             int outerX = sunX + cos(angle) * (sunRadius + size / 8);
             int outerY = sunY + sin(angle) * (sunRadius + size / 8);
-            display.drawLine(innerX, innerY, outerX, outerY, TFT_BLACK);
+            display.drawLine(innerX, innerY, outerX, outerY, 15);
         }
 
         // Draw cloud (overlapping sun)
         int cloudY = cy + size / 10;
         // Cloud bumps (3 circles)
-        display.fillCircle(cx - size / 8, cloudY, size / 8, TFT_BLACK);
-        display.fillCircle(cx, cloudY - size / 12, size / 7, TFT_BLACK);
-        display.fillCircle(cx + size / 8, cloudY, size / 8, TFT_BLACK);
+        display.fillCircle(cx - size / 8, cloudY, size / 8, 15);
+        display.fillCircle(cx, cloudY - size / 12, size / 7, 15);
+        display.fillCircle(cx + size / 8, cloudY, size / 8, 15);
         // Cloud base
-        display.fillRect(cx - size / 6, cloudY, size / 3, size / 8, TFT_BLACK);
+        display.fillRect(cx - size / 6, cloudY, size / 3, size / 8, 15);
     }
     else if (strcmp(iconName, "cloudy") == 0) {
         // Cloud icon - three bumps
         int cloudY = cy;
 
         // Draw three overlapping circles for cloud bumps
-        display.fillCircle(cx - size / 6, cloudY, size / 7, TFT_BLACK);
-        display.fillCircle(cx, cloudY - size / 10, size / 6, TFT_BLACK);
-        display.fillCircle(cx + size / 6, cloudY, size / 7, TFT_BLACK);
+        display.fillCircle(cx - size / 6, cloudY, size / 7, 15);
+        display.fillCircle(cx, cloudY - size / 10, size / 6, 15);
+        display.fillCircle(cx + size / 6, cloudY, size / 7, 15);
 
         // Cloud base rectangle
-        display.fillRect(cx - size / 5, cloudY, size / 2.5, size / 7, TFT_BLACK);
+        display.fillRect(cx - size / 5, cloudY, size / 2.5, size / 7, 15);
     }
     else if (strcmp(iconName, "rain") == 0) {
         // Cloud with rain drops
         int cloudY = cy - size / 8;
 
         // Draw cloud
-        display.fillCircle(cx - size / 8, cloudY, size / 9, TFT_BLACK);
-        display.fillCircle(cx, cloudY - size / 12, size / 8, TFT_BLACK);
-        display.fillCircle(cx + size / 8, cloudY, size / 9, TFT_BLACK);
-        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, TFT_BLACK);
+        display.fillCircle(cx - size / 8, cloudY, size / 9, 15);
+        display.fillCircle(cx, cloudY - size / 12, size / 8, 15);
+        display.fillCircle(cx + size / 8, cloudY, size / 9, 15);
+        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, 15);
 
         // Draw rain drops (5 drops)
         int dropY = cy + size / 6;
         for (int i = 0; i < 5; i++) {
             int dropX = cx - size / 5 + (i * size / 10);
             // Draw thick rain lines
-            display.drawLine(dropX, dropY, dropX, dropY + size / 8, TFT_BLACK);
-            display.drawLine(dropX + 1, dropY, dropX + 1, dropY + size / 8, TFT_BLACK);
+            display.drawLine(dropX, dropY, dropX, dropY + size / 8, 15);
+            display.drawLine(dropX + 1, dropY, dropX + 1, dropY + size / 8, 15);
         }
     }
     else if (strcmp(iconName, "snow") == 0) {
@@ -186,10 +186,10 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
         int cloudY = cy - size / 8;
 
         // Draw cloud
-        display.fillCircle(cx - size / 8, cloudY, size / 9, TFT_BLACK);
-        display.fillCircle(cx, cloudY - size / 12, size / 8, TFT_BLACK);
-        display.fillCircle(cx + size / 8, cloudY, size / 9, TFT_BLACK);
-        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, TFT_BLACK);
+        display.fillCircle(cx - size / 8, cloudY, size / 9, 15);
+        display.fillCircle(cx, cloudY - size / 12, size / 8, 15);
+        display.fillCircle(cx + size / 8, cloudY, size / 9, 15);
+        display.fillRect(cx - size / 7, cloudY, size / 3.5, size / 9, 15);
 
         // Draw snowflakes (asterisks)
         int flakeY = cy + size / 6;
@@ -198,28 +198,28 @@ void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, i
         for (int i = 0; i < 3; i++) {
             int flakeX = cx - size / 6 + (i * size / 6);
             // Vertical line
-            display.drawLine(flakeX, flakeY - flakeSize, flakeX, flakeY + flakeSize, TFT_BLACK);
+            display.drawLine(flakeX, flakeY - flakeSize, flakeX, flakeY + flakeSize, 15);
             // Horizontal line
-            display.drawLine(flakeX - flakeSize, flakeY, flakeX + flakeSize, flakeY, TFT_BLACK);
+            display.drawLine(flakeX - flakeSize, flakeY, flakeX + flakeSize, flakeY, 15);
             // Diagonal lines
             display.drawLine(flakeX - flakeSize/1.5, flakeY - flakeSize/1.5,
-                           flakeX + flakeSize/1.5, flakeY + flakeSize/1.5, TFT_BLACK);
+                           flakeX + flakeSize/1.5, flakeY + flakeSize/1.5, 15);
             display.drawLine(flakeX - flakeSize/1.5, flakeY + flakeSize/1.5,
-                           flakeX + flakeSize/1.5, flakeY - flakeSize/1.5, TFT_BLACK);
+                           flakeX + flakeSize/1.5, flakeY - flakeSize/1.5, 15);
         }
     }
 }
 
-void drawHeader(TFT_eSprite& display, const char* location, unsigned long timestamp) {
+void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long timestamp) {
     // Draw header background
-    display.fillRect(0, HEADER_Y, SCREEN_WIDTH, HEADER_HEIGHT, TFT_WHITE);
-    display.drawFastHLine(0, HEADER_HEIGHT, SCREEN_WIDTH, TFT_BLACK);
+    display.fillRect(0, HEADER_Y, SCREEN_WIDTH, HEADER_HEIGHT, 0);
+    display.drawFastHLine(0, HEADER_HEIGHT, SCREEN_WIDTH, 15);
 
     // Location on left
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
     display.setFreeFont(FSS12);
-    display.drawString(location, MARGIN, HEADER_Y + 8);
+    display.drawString(location, MARGIN, HEADER_Y + 15);  // Vertically centered
 
     // Date/time on right (same size as location)
     if (timestamp > 0) {
@@ -231,20 +231,20 @@ void drawHeader(TFT_eSprite& display, const char* location, unsigned long timest
                 tm->tm_hour, tm->tm_min);
         display.setTextDatum(TR_DATUM);
         display.setFreeFont(FSS12);  // Match location font size
-        display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 8);
+        display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 15);  // Vertically centered
     }
 }
 
-void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
+void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(INDOOR_TEMP_X, INDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, TFT_BLACK);
+    display.drawRect(INDOOR_TEMP_X, INDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, 15);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
 
     // Label
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Innen", INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_LABEL_Y);
 
     // Large temperature value with degree symbol
@@ -259,29 +259,29 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         int y = INDOOR_TEMP_Y + CARD_DETAIL_Y;
         int pipeX = INDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
         // Line 1: min
         int x = INDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("min  ", x, y);
         x += display.textWidth("min  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB9);
+        display.setFreeFont(FSSB18);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
         // Degree symbol
-        display.drawCircle(x, y + 3, 2, TFT_BLACK);
-        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        display.drawCircle(x, y + 3, 2, 15);
+        display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -294,22 +294,22 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
         // Line 2: max
         y += 18;  // Move to next line
         x = INDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("max  ", x, y);
         x += display.textWidth("max  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB9);
+        display.setFreeFont(FSSB18);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
         // Degree symbol
-        display.drawCircle(x, y + 3, 2, TFT_BLACK);
-        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        display.drawCircle(x, y + 3, 2, 15);
+        display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -320,12 +320,12 @@ void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data) {
     }
 }
 
-void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
-    display.drawRect(OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, TFT_BLACK);
+void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
+    display.drawRect(OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, 15);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Aussen", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
@@ -344,29 +344,29 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
     // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         int y = OUTDOOR_TEMP_Y + CARD_DETAIL_Y;
         int pipeX = OUTDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
         // Line 1: min
         int x = OUTDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("min  ", x, y);
         x += display.textWidth("min  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB9);
+        display.setFreeFont(FSSB18);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
         // Degree symbol
-        display.drawCircle(x, y + 3, 2, TFT_BLACK);
-        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        display.drawCircle(x, y + 3, 2, 15);
+        display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -379,22 +379,22 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
         // Line 2: max
         y += 18;  // Move to next line
         x = OUTDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("max  ", x, y);
         x += display.textWidth("max  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB9);
+        display.setFreeFont(FSSB18);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
 
         // Degree symbol
-        display.drawCircle(x, y + 3, 2, TFT_BLACK);
-        display.drawCircle(x, y + 3, 3, TFT_BLACK);
+        display.drawCircle(x, y + 3, 2, 15);
+        display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -405,14 +405,14 @@ void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data) {
     }
 }
 
-void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
+void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    drawCard(display, INDOOR_HUMID_X, INDOOR_HUMID_Y);
+    drawCard(display, INDOOR_HUMID_X, INDOOR_HUMID_Y, HUMID_CARD_HEIGHT);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
     // Draw humidity value (bold) and unit (non-bold) separately
@@ -426,7 +426,7 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(humidStr);
-    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("%", unitX, valueY);
 
@@ -435,16 +435,16 @@ void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data) {
     char detailStr[32];
     snprintf(detailStr, sizeof(detailStr), "Raumklima: %s", status);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y);
 }
 
-void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
-    drawCard(display, OUTDOOR_HUMID_X, OUTDOOR_HUMID_Y);
+void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
+    drawCard(display, OUTDOOR_HUMID_X, OUTDOOR_HUMID_Y, HUMID_CARD_HEIGHT);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Aussen", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
@@ -464,7 +464,7 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(humidStr);
-    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("%", unitX, valueY);
 
@@ -476,7 +476,7 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
 
     // Draw dew point with custom degree symbol (value bold, unit non-bold)
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     int dewX = OUTDOOR_HUMID_X + CARD_PADDING;
     int dewY = OUTDOOR_HUMID_Y + CARD_DETAIL_Y;
 
@@ -487,28 +487,28 @@ void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data) {
     // Draw temperature value in bold
     char dewTempStr[10];
     snprintf(dewTempStr, sizeof(dewTempStr), "%.1f", dewPoint);
-    display.setFreeFont(FSSB9);
+    display.setFreeFont(FSSB18);
     display.drawString(dewTempStr, dewX, dewY);
     dewX += display.textWidth(dewTempStr) + 5;
 
     // Draw degree symbol (circle)
-    display.drawCircle(dewX, dewY + 3, 2, TFT_BLACK);
-    display.drawCircle(dewX, dewY + 3, 3, TFT_BLACK);
+    display.drawCircle(dewX, dewY + 3, 2, 15);
+    display.drawCircle(dewX, dewY + 3, 3, 15);
     dewX += 5;
 
     // Draw "C" in non-bold
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("C", dewX, dewY);
 }
 
-void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
+void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(AIR_QUALITY_X, AIR_QUALITY_Y, CARD_WIDTH, AIR_QUALITY_CARD_HEIGHT, TFT_BLACK);
+    display.drawRect(AIR_QUALITY_X, AIR_QUALITY_Y, CARD_WIDTH, AIR_QUALITY_CARD_HEIGHT, 15);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
     // Draw CO2 value (bold) and unit (non-bold) separately
@@ -522,21 +522,21 @@ void drawAirQualityWidget(TFT_eSprite& display, const IndoorData& data) {
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(co2Str);
-    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("ppm", unitX, valueY);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 }
 
-void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
+void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(PRESSURE_X, PRESSURE_Y, CARD_WIDTH, PRESSURE_CARD_HEIGHT, TFT_BLACK);
+    display.drawRect(PRESSURE_X, PRESSURE_Y, CARD_WIDTH, PRESSURE_CARD_HEIGHT, 15);
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     // Draw pressure value (bold) and unit (non-bold) separately
@@ -550,7 +550,7 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(pressStr);
-    display.setFreeFont(FSS18);  // Use FSS18 to match size of FSSB18
+    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("hPa", unitX, valueY);
 
@@ -559,29 +559,29 @@ void drawPressureWidget(TFT_eSprite& display, const IndoorData& data) {
 
 // Legacy forecast widgets (deprecated - now using 3-day forecast column)
 // Kept for backward compatibility but not used in 3-column layout
-void drawForecast3hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
+void drawForecast3hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) {
     // No longer used in 3-column layout
 }
 
-void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast) {
+void drawForecast6hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) {
     // No longer used in 3-column layout
 }
 
-void drawAIWidget(TFT_eSprite& display, const String& commentary) {
-    // Position: WIND_X=272, WIND_Y=279
+void drawAIWidget(M5EPD_Canvas& display, const String& commentary) {
+    // Position: AI_WIDGET_X=272, AI_WIDGET_Y=279
     // Size: 256px × 175px
-    display.drawRect(WIND_X, WIND_Y, CARD_WIDTH, AI_CARD_HEIGHT, TFT_BLACK);
+    display.drawRect(AI_WIDGET_X, AI_WIDGET_Y, CARD_WIDTH, AI_CARD_HEIGHT, 15);
 
     // Empty widget if no commentary
     if (commentary.length() == 0) return;
 
     // Text area: 244px wide × ~160px high (no label, starts from top)
-    int textX = WIND_X + CARD_PADDING;
-    int textY = WIND_Y + CARD_PADDING + 8;  // Start near top of widget
+    int textX = AI_WIDGET_X + CARD_PADDING;
+    int textY = AI_WIDGET_Y + CARD_PADDING + 8;  // Start near top of widget
 
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
+    display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS9);
+    display.setFreeFont(FSS12);
     int maxWidth = CARD_WIDTH - (CARD_PADDING * 2);
     int lineHeight = 20;  // FSS9 with extra spacing
 
@@ -589,7 +589,7 @@ void drawAIWidget(TFT_eSprite& display, const String& commentary) {
     String remaining = commentary;
     int currentY = textY;
 
-    while (remaining.length() > 0 && currentY + lineHeight < WIND_Y + AI_CARD_HEIGHT - 6) {
+    while (remaining.length() > 0 && currentY + lineHeight < AI_WIDGET_Y + AI_CARD_HEIGHT - 6) {
         // Find longest substring that fits in maxWidth
         int fitLength = remaining.length();
         for (int i = 1; i <= remaining.length(); i++) {
@@ -621,7 +621,7 @@ void drawAIWidget(TFT_eSprite& display, const String& commentary) {
 }
 
 // Helper: Draw 3-time grid (06h, 12h, 18h)
-void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
+void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
                      int x, int y, int width) {
     int cellWidth = width / 3;
 
@@ -630,7 +630,7 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
         const DayTimeForecast& dt = times[i];
         bool hasData = (dt.hour != 0);  // hour == 0 means no data
 
-        display.setFreeFont(FSS9);
+        display.setFreeFont(FSS12);
         display.setTextDatum(TC_DATUM);
 
         if (hasData) {
@@ -644,7 +644,7 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
             int tempTextY = y + 27;
 
             // Draw temperature number in bold
-            display.setFreeFont(FSSB9);
+            display.setFreeFont(FSSB18);
             int tempWidth = display.textWidth(tempStr);
             int startX = cellX + cellWidth/2 - (tempWidth + 12) / 2;  // Center: text + spacing + degree + C
             display.setTextDatum(TL_DATUM);
@@ -652,11 +652,11 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
 
             // Draw degree symbol (two circles) with spacing
             int degX = startX + tempWidth + 4;  // Increased spacing from 2 to 4
-            display.drawCircle(degX, tempTextY + 3, 2, TFT_BLACK);
-            display.drawCircle(degX, tempTextY + 3, 3, TFT_BLACK);
+            display.drawCircle(degX, tempTextY + 3, 2, 15);
+            display.drawCircle(degX, tempTextY + 3, 3, 15);
 
             // Draw "C" in non-bold
-            display.setFreeFont(FSS9);
+            display.setFreeFont(FSS12);
             display.drawString("C", degX + 5, tempTextY);
 
             // Precipitation with unit (value bold, unit non-bold)
@@ -664,21 +664,21 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
             snprintf(precipStr, sizeof(precipStr), "%.1f", dt.precipitationMm / 10.0);
 
             // Calculate centered position for value + space + unit
-            display.setFreeFont(FSSB9);
+            display.setFreeFont(FSSB18);
             int precipValueWidth = display.textWidth(precipStr);
-            display.setFreeFont(FSS9);
+            display.setFreeFont(FSS12);
             int spaceWidth = display.textWidth(" ");
             int precipUnitWidth = display.textWidth("mm");
             int totalWidth = precipValueWidth + spaceWidth + precipUnitWidth;
             int precipStartX = cellX + cellWidth/2 - totalWidth/2;
 
             // Draw value in bold
-            display.setFreeFont(FSSB9);
+            display.setFreeFont(FSSB18);
             display.setTextDatum(TL_DATUM);
             display.drawString(precipStr, precipStartX, y + 42);
 
             // Draw unit in non-bold with space
-            display.setFreeFont(FSS9);
+            display.setFreeFont(FSS12);
             display.drawString(" mm", precipStartX + precipValueWidth, y + 42);
         } else {
             // Show placeholder for missing data
@@ -688,126 +688,31 @@ void drawDayTimeGrid(TFT_eSprite& display, const DayTimeForecast times[3],
 }
 
 // Helper: Draw single daily forecast section
-void drawDailyForecastSection(TFT_eSprite& display, const DailyForecast& day,
+void drawDailyForecastSection(M5EPD_Canvas& display, const DailyForecast& day,
                                int x, int y, const char* dayLabel, bool isToday) {
-    display.setTextColor(TFT_BLACK, TFT_WHITE);
-    display.setTextDatum(TL_DATUM);
-
-    // Day header (use FSS9 to match other widget labels like "Innen")
-    display.setFreeFont(FSS9);
-    display.drawString(dayLabel, x + CARD_PADDING, y + CARD_LABEL_Y);
-
-    if (!day.valid) {
-        display.setFreeFont(FSS9);
-        display.drawString("n/a", x + CARD_PADDING, y + CARD_VALUE_Y);
-        return;
-    }
-
-    // Icon size (24×24 for all sections - consistent sizing)
-    int iconSize = 24;
-    int iconY = y + CARD_VALUE_Y;  // Align with other cards (28px from top)
-
-    // Daily weather icon
-    const char* iconName = getIconFromCode(day.symbolCode);
-    drawWeatherIcon(display, x + CARD_PADDING, iconY, iconName, iconSize);
-
-    // Temperature range with custom degree symbols (values bold, units non-bold)
-    display.setTextDatum(TL_DATUM);
-    int tempX = x + CARD_PADDING + iconSize + 8;
-    int tempY = iconY + 5;
-
-    // Draw min temperature in bold
-    char tempStr[10];
-    snprintf(tempStr, sizeof(tempStr), "%d", day.tempMin);
-    display.setFreeFont(FSSB12);
-    display.drawString(tempStr, tempX, tempY);
-    tempX += display.textWidth(tempStr) + 5;
-
-    // Draw degree symbol for min temp
-    display.drawCircle(tempX, tempY + 3, 2, TFT_BLACK);
-    display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
-    tempX += 5;
-
-    // Draw "C/" in non-bold
-    display.setFreeFont(FSS12);
-    display.drawString("C/", tempX, tempY);
-    tempX += display.textWidth("C/");
-
-    // Draw max temperature in bold
-    snprintf(tempStr, sizeof(tempStr), "%d", day.tempMax);
-    display.setFreeFont(FSSB12);
-    display.drawString(tempStr, tempX, tempY);
-    tempX += display.textWidth(tempStr) + 5;
-
-    // Draw degree symbol for max temp
-    display.drawCircle(tempX, tempY + 3, 2, TFT_BLACK);
-    display.drawCircle(tempX, tempY + 3, 3, TFT_BLACK);
-    tempX += 5;
-
-    // Draw "C" in non-bold
-    display.setFreeFont(FSS12);
-    display.drawString("C", tempX, tempY);
-
-    // Precipitation (if > 0) - value bold, unit non-bold
-    if (day.precipSum > 0) {
-        char precipStr[16];
-        snprintf(precipStr, sizeof(precipStr), "%.1f", day.precipSum / 10.0);
-
-        // Calculate position for right-aligned text
-        display.setFreeFont(FSSB9);
-        int valueWidth = display.textWidth(precipStr);
-        display.setFreeFont(FSS9);
-        int spaceWidth = display.textWidth(" ");
-        int unitWidth = display.textWidth("mm");
-        int totalWidth = valueWidth + spaceWidth + unitWidth;
-        int precipX = x + FORECAST_COL_WIDTH - 6 - totalWidth;
-
-        // Draw value in bold
-        display.setFreeFont(FSSB9);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(precipStr, precipX, iconY + 5);
-
-        // Draw unit in non-bold with space
-        display.setFreeFont(FSS9);
-        display.drawString(" mm", precipX + valueWidth, iconY + 5);
-    }
-
-    // 3-time grid (06h, 12h, 18h) - now without time labels, more compact
-    int gridY = y + 60;  // Reduced spacing from daily forecast section
-    drawDayTimeGrid(display, day.times, x + CARD_PADDING, gridY, FORECAST_COL_WIDTH - 12);
+    // NOT USED on M5Paper (no forecast widgets in portrait layout)
+    (void)display;
+    (void)day;
+    (void)x;
+    (void)y;
+    (void)dayLabel;
+    (void)isToday;
 }
 
 // Main 3-day forecast column
-void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast) {
-    // Three daily sections with individual borders (8px gaps between)
-    const char* dayLabels[] = {"Heute", "Morgen", "Uebermorgen"};
-    const int sectionHeights[] = {FORECAST_HEUTE_HEIGHT, FORECAST_MORGEN_HEIGHT, FORECAST_UEBERMORGEN_HEIGHT};
-
-    // Calculate dynamic Y-positions with 8px gaps (matching CARD_SPACING)
-    int yPositions[] = {
-        FORECAST_COL_Y,  // HEUTE starts at top
-        FORECAST_COL_Y + FORECAST_HEUTE_HEIGHT + FORECAST_SECTION_GAP,  // MORGEN
-        FORECAST_COL_Y + FORECAST_HEUTE_HEIGHT + FORECAST_SECTION_GAP +
-            FORECAST_MORGEN_HEIGHT + FORECAST_SECTION_GAP  // UEBERMORGEN
-    };
-
-    for (int i = 0; i < 3; i++) {
-        // Draw individual border for each section (like other cards)
-        display.drawRect(FORECAST_COL_X, yPositions[i], FORECAST_COL_WIDTH, sectionHeights[i], TFT_BLACK);
-
-        drawDailyForecastSection(display, forecast.days[i],
-                                 FORECAST_COL_X, yPositions[i],
-                                 dayLabels[i], i == 0);  // isToday = (i == 0)
-    }
+void draw3DayForecastColumn(M5EPD_Canvas& display, const ForecastData& forecast) {
+    // NOT USED on M5Paper (no forecast widgets in portrait layout)
+    (void)display;  // Suppress unused parameter warning
+    (void)forecast;
 }
 
-void drawStatusBar(TFT_eSprite& display) {
+void drawStatusBar(M5EPD_Canvas& display) {
     // Just draw separator line at bottom
-    display.drawFastHLine(0, STATUS_BAR_Y, SCREEN_WIDTH, TFT_BLACK);
+    display.drawFastHLine(0, STATUS_BAR_Y, SCREEN_WIDTH, 15);
 }
 
-void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
-    display.fillScreen(TFT_WHITE);
+void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
+    display.fillCanvas(0);  // White background (M5EPD uses fillCanvas, not fillScreen)
 
     // Header
     drawHeader(display, LOCATION_NAME, data.updateTime);
@@ -817,24 +722,63 @@ void drawDashboard(TFT_eSprite& display, const DashboardData& data) {
     drawIndoorHumidWidget(display, data.weather.indoor);
     drawAirQualityWidget(display, data.weather.indoor);
     drawPressureWidget(display, data.weather.indoor);
+    drawStatusInfo(display);
 
-    // COLUMN 2: OUTDOOR SENSORS + AI WIDGET
+    // COLUMN 2: OUTDOOR + AI + BATTERY
     drawOutdoorTempWidget(display, data.weather.outdoor);
     drawOutdoorHumidWidget(display, data.weather.outdoor);
     drawAIWidget(display, data.aiCommentary);
-
-    // COLUMN 3: 3-DAY FORECAST
-    draw3DayForecastColumn(display, data.forecast);
+    drawBatteryWidget(display, data.batteryVoltage, data.batteryPercent);
 
     // Status bar (separator line only)
     drawStatusBar(display);
 }
 
+void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent) {
+    display.drawRect(BATTERY_X, BATTERY_Y, CARD_WIDTH, BATTERY_CARD_HEIGHT, 15);
+
+    display.setTextColor(15, 0);
+    display.setTextDatum(TL_DATUM);
+
+    // Label
+    display.setFreeFont(FSS12);
+    display.drawString("Batterie", BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_LABEL_Y);
+
+    // Battery icon
+    int iconX = BATTERY_X + CARD_WIDTH - 80;
+    int iconY = BATTERY_Y + CARD_VALUE_Y;
+    display.drawRect(iconX, iconY, 60, 24, 15);
+    display.fillRect(iconX + 60, iconY + 6, 4, 12, 15);  // Nub
+
+    // Fill based on percentage (grayscale for low battery)
+    int fillW = (56) * percent / 100;
+    uint8_t fillColor = (percent < 20) ? 12 : 15;  // Darker gray for low
+    display.fillRect(iconX + 2, iconY + 2, fillW, 20, fillColor);
+
+    // Percentage text
+    char percentStr[8];
+    snprintf(percentStr, sizeof(percentStr), "%d%%", percent);
+    display.setFreeFont(FSSB18);
+    display.drawString(percentStr, BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_VALUE_Y);
+
+    // Voltage
+    char voltStr[16];
+    snprintf(voltStr, sizeof(voltStr), "%.2fV", voltage / 1000.0);
+    display.setFreeFont(FSS12);
+    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 80, BATTERY_Y + CARD_VALUE_Y + 15);
+}
+
+void drawStatusInfo(M5EPD_Canvas& display) {
+    // Optional: Status/info card in column 1 bottom
+    // For now, leave empty (or draw a minimal card)
+    display.drawRect(STATUS_INFO_X, STATUS_INFO_Y, CARD_WIDTH, STATUS_INFO_HEIGHT, 15);
+}
+
 // Legacy function names for compatibility
-void drawIndoorCO2Widget(TFT_eSprite& display, const IndoorData& data) {
+void drawIndoorCO2Widget(M5EPD_Canvas& display, const IndoorData& data) {
     drawAirQualityWidget(display, data);
 }
 
-void drawIndoorPressureWidget(TFT_eSprite& display, const IndoorData& data) {
+void drawIndoorPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     drawPressureWidget(display, data);
 }

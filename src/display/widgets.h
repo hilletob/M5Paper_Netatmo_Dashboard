@@ -1,32 +1,28 @@
 #ifndef WIDGETS_H
 #define WIDGETS_H
 
-#include "TFT_eSPI.h"
+#include <M5EPD.h>
 #include "../data/weather_data.h"
 
 // Weather icon renderer
-void drawWeatherIcon(TFT_eSprite& display, int x, int y, const char* iconName, int size = 40);
+void drawWeatherIcon(M5EPD_Canvas& display, int x, int y, const char* iconName, int size = 40);
 
 // Widget drawing functions
-void drawIndoorTempWidget(TFT_eSprite& display, const IndoorData& data);
-void drawIndoorHumidWidget(TFT_eSprite& display, const IndoorData& data);
-void drawIndoorPressureWidget(TFT_eSprite& display, const IndoorData& data);
-void drawIndoorCO2Widget(TFT_eSprite& display, const IndoorData& data);
+void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data);
+void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data);
+void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data);  // Renamed from drawIndoorCO2Widget
+void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data);     // Renamed from drawIndoorPressureWidget
 
-void drawOutdoorTempWidget(TFT_eSprite& display, const OutdoorData& data);
-void drawOutdoorHumidWidget(TFT_eSprite& display, const OutdoorData& data);
+void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data);
+void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data);
 
-void drawAIWidget(TFT_eSprite& display, const String& commentary);
+void drawAIWidget(M5EPD_Canvas& display, const String& commentary);
+void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent);
+void drawStatusInfo(M5EPD_Canvas& display);  // New: status/info card in col1 bottom
 
-void drawForecast3hWidget(TFT_eSprite& display, const ForecastPoint& forecast);
-void drawForecast6hWidget(TFT_eSprite& display, const ForecastPoint& forecast);
-
-// New 3-day forecast column
-void draw3DayForecastColumn(TFT_eSprite& display, const ForecastData& forecast);
-
-void drawStatusBar(TFT_eSprite& display);
+void drawStatusBar(M5EPD_Canvas& display);
 
 // Complete dashboard renderer
-void drawDashboard(TFT_eSprite& display, const DashboardData& data);
+void drawDashboard(M5EPD_Canvas& display, const DashboardData& data);
 
 #endif  // WIDGETS_H

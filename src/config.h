@@ -60,9 +60,9 @@
 #define BATTERY_PIN A0  // GPIO1
 #endif
 
-// Display Configuration
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 480
+// Display Configuration (defined in layout.h for M5Paper)
+// #define SCREEN_WIDTH 800  // REMOVED - now in layout.h
+// #define SCREEN_HEIGHT 480  // REMOVED - now in layout.h
 
 // NTP Configuration
 #ifndef NTP_SERVER_1

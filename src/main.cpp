@@ -1,15 +1,15 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <time.h>
-#include "TFT_eSPI.h"
+#include <M5EPD.h>
 #include "config.h"
 
 // API clients
 #include "api/netatmo_client.h"
-#include "api/meteo_client.h"
 #include "api/gemini_client.h"
 
 // Display
+#include "display/layout.h"
 #include "display/widgets.h"
 #include "display/fonts.h"
 
@@ -19,17 +19,11 @@
 
 // Power management
 #include "power/sleep_manager.h"
-#include "power/battery.h"
 
 // Global objects
-#ifdef EPAPER_ENABLE
-EPaper display;
-#else
-TFT_eSprite display = TFT_eSprite(&tft);
-#endif
+M5EPD_Canvas canvas(&M5.EPD);
 
 NetatmoClient netatmoClient;
-MeteoClient meteoClient;
 GeminiClient geminiClient;
 
 // Function prototypes
@@ -48,12 +42,21 @@ void setup() {
     ESP_LOGI("main", "=== ESP32 Weather Dashboard Starting ===");
     ESP_LOGI("main", "Build date: %s %s", __DATE__, __TIME__);
 
+    // M5Paper hardware initialization
+    M5.begin();
+    M5.EPD.SetRotation(90);  // Portrait mode
+    M5.EPD.Clear(true);
+    M5.RTC.begin();
+
+    // Create canvas
+    canvas.createCanvas(540, 960);
+    canvas.fillCanvas(0);
+
+    ESP_LOGI("main", "M5Paper initialized (540×960 portrait)");
+
     // Initialize sleep manager (disables watchdog)
     SleepManager::init();
     SleepManager::incrementWakeCount();
-
-    // Battery monitoring disabled (ESP32-C3 has no built-in battery ADC)
-    // Battery::init();
 
     // Initialize LittleFS for caching
     if (!DataCache::init()) {
@@ -73,37 +76,33 @@ void setup() {
     // Show splash screen only on first boot
     if (SleepManager::getWakeCount() == 1) {
         ESP_LOGI("main", "First boot - showing splash screen");
-        display.begin();
-        display.setRotation(0);  // Landscape orientation
-        display.fillScreen(TFT_WHITE);
+        canvas.fillCanvas(0);
 
-        display.setTextColor(TFT_BLACK, TFT_WHITE);
-        display.setTextDatum(MC_DATUM);  // Middle-center for centered text
+        canvas.setTextColor(15, 0);
+        canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
 
         // Title - Large and bold
-        display.setFreeFont(FSSB24);  // FreeSans Bold 24pt
-        display.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
+        canvas.setFreeFont(FSSB18);  // FreeSans Bold 18pt
+        canvas.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
 
         // Subtitle - Medium
-        display.setFreeFont(FSS18);  // FreeSans 18pt
-        display.drawString(LOCATION_NAME, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
+        canvas.setFreeFont(FSS12);  // FreeSans 18pt
+        canvas.drawString(LOCATION_NAME, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
 
-        // Status - Small
-        display.setFreeFont(FSS12);  // FreeSans 12pt
-        display.drawString("Wettergoetter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
+        // Status - Medium
+        canvas.setFreeFont(FSS12);  // FreeSans 18pt (was 12pt)
+        canvas.drawString("Wettergoetter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
 
-        // Info - Tiny
-        display.setFreeFont(FSS9);  // FreeSans 9pt
-        display.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
+        // Info - Small
+        canvas.setFreeFont(FSS12);  // FreeSans 18pt (was 9pt)
+        canvas.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
 
-        display.update();
+        canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
         delay(1000);
     } else {
         ESP_LOGI("main", "Wake #%d - fetching data in background", SleepManager::getWakeCount());
-        // Still need to initialize display hardware (but don't show splash)
-        display.begin();
-        display.setRotation(0);
+        // M5Paper display already initialized at top of setup()
     }
 
     // Prepare dashboard data
@@ -150,9 +149,16 @@ void setup() {
         }
     }
 
-    // Battery reading disabled (ESP32-C3 has no built-in battery ADC)
-    // Battery::read(dashboardData.batteryVoltage, dashboardData.batteryPercent);
+    // Read battery (M5Paper)
+    uint32_t batteryVoltage = M5.getBatteryVoltage();
+    uint8_t batteryPercent = map(batteryVoltage, 3200, 4350, 0, 100);
+    batteryPercent = constrain(batteryPercent, 0, 100);
+
+    dashboardData.batteryVoltage = batteryVoltage;
+    dashboardData.batteryPercent = batteryPercent;
     dashboardData.updateTime = SleepManager::getEpoch();
+
+    ESP_LOGI("main", "Battery: %d mV (%d%%)", batteryVoltage, batteryPercent);
 
     // Update display
     if (dataAvailable) {
@@ -160,23 +166,22 @@ void setup() {
     } else {
         // Show error screen
         ESP_LOGE("main", "No data available (fresh or cached)");
-        display.begin();  // Re-init required
-        display.setRotation(0);
-        display.fillScreen(TFT_WHITE);
-        display.setTextColor(TFT_BLACK, TFT_WHITE);
-        display.setTextDatum(MC_DATUM);
+        canvas.fillCanvas(0);
+        canvas.setTextColor(15, 0);
+        canvas.setTextDatum(MC_DATUM);
 
         // Error message with FreeFonts
-        display.setFreeFont(FSSB24);  // Large bold
-        display.drawString("FEHLER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50);
+        canvas.setFreeFont(FSSB18);  // Large bold
+        canvas.drawString("FEHLER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50);
 
-        display.setFreeFont(FSS18);  // Medium
-        display.drawString("Keine Daten verfügbar", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 10);
+        canvas.setFreeFont(FSS12);  // Medium
+        canvas.drawString("Keine Daten verfügbar", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 10);
 
-        display.setFreeFont(FSS12);  // Small
-        display.drawString("WiFi und API prüfen", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
+        canvas.setFreeFont(FSS12);  // Medium (was 12pt)
+        canvas.drawString("WiFi und API prüfen", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
 
-        display.update();
+        canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+        M5.EPD.Sleep();
     }
 
     // Schedule next wake and enter deep sleep (pass Netatmo timestamp for smart scheduling)
@@ -262,11 +267,7 @@ bool fetchWeatherData(DashboardData& data) {
         success = false;
     }
 
-    // Fetch MeteoSwiss forecast
-    if (!meteoClient.getForecast(data.forecast)) {
-        ESP_LOGE("main", "Failed to fetch forecast data");
-        success = false;
-    }
+    // Met.no forecast - REMOVED (no forecast on M5Paper)
 
     // Generate Gemini AI commentary (only if we have weather data)
     if (data.weather.indoor.valid || data.weather.outdoor.valid) {
@@ -283,28 +284,25 @@ bool fetchWeatherData(DashboardData& data) {
     }
 
     // Even if one API fails, we can still show partial data
-    return (data.weather.indoor.valid || data.weather.outdoor.valid || data.forecast.current.valid);
+    return (data.weather.indoor.valid || data.weather.outdoor.valid);
 }
 
 void updateDisplay(const DashboardData& data) {
     ESP_LOGI("display", "Updating ePaper display");
 
-    // CRITICAL: Re-initialize display before update (Seeed_GFX bug workaround)
-    display.begin();
-    display.setRotation(0);
+    // Clear canvas and draw dashboard
+    canvas.fillCanvas(0);
+    drawDashboard(canvas, data);
 
-    // Draw dashboard
-    drawDashboard(display, data);
-
-    // Update display (takes 15-20 seconds)
-    ESP_LOGI("display", "Refreshing screen (this takes 15-20 seconds)...");
+    // Push canvas to display (takes ~2 seconds)
+    ESP_LOGI("display", "Pushing canvas to display...");
     unsigned long startTime = millis();
-    display.update();
+    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
     unsigned long duration = millis() - startTime;
-    ESP_LOGI("display", "Screen updated in %lu ms", duration);
+    ESP_LOGI("display", "Display updated in %lu ms", duration);
 
     // Put display to sleep
-    display.sleep();
+    M5.EPD.Sleep();
 }
 
 void scheduleNextWake(unsigned long netatmoLastUpdate) {

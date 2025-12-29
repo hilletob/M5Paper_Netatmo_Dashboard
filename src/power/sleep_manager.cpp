@@ -1,5 +1,6 @@
 #include "sleep_manager.h"
 #include <time.h>
+#include <M5EPD.h>
 
 // Initialize static RTC variables
 RTC_DATA_ATTR time_t SleepManager::rtcEpoch = 0;
@@ -22,13 +23,14 @@ void SleepManager::deepSleep(uint32_t seconds) {
     ESP_LOGI("sleep", "Entering deep sleep for %u seconds", seconds);
     ESP_LOGI("sleep", "Next RTC epoch: %ld", rtcEpoch);
 
+    // Put M5Paper display to sleep
+    M5.EPD.Sleep();
+    delay(100);
+
     // Configure timer wake-up
     esp_sleep_enable_timer_wakeup(seconds * 1000000ULL);  // Convert to microseconds
 
-    // Give time for serial output and display to finish
-    delay(1000);
-
-    // Enter deep sleep (never returns)
+    // Enter deep sleep
     esp_deep_sleep_start();
 }
 

@@ -1,61 +1,50 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 
-// Screen dimensions (800x480 landscape)
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 480
+// Screen dimensions (540×960 portrait) - M5Paper
+#define SCREEN_WIDTH 540
+#define SCREEN_HEIGHT 960
 
-// General layout constants
-#define MARGIN 8
-#define CARD_SPACING 8
-#define COLUMN_GAP 8
+// General layout constants - BALANCED
+#define MARGIN 6               // Moderate margins
+#define CARD_SPACING 6         // Moderate spacing between cards
+#define COLUMN_GAP 6           // Moderate gap between columns
 
 // Header section
-#define HEADER_HEIGHT 45
+#define HEADER_HEIGHT 55       // Header height
 #define HEADER_Y 0
 
-// Three-column card grid (3 × 256px)
-#define CARD_WIDTH 256
-#define CARD_HEIGHT 95  // Default card height
-
-// Individual card heights
-#define TEMP_CARD_HEIGHT 115       // Temperature cards (with min/max times)
-#define HUMID_CARD_HEIGHT 95       // Humidity cards
-#define AIR_QUALITY_CARD_HEIGHT 80 // CO2 card (no quality label)
-#define PRESSURE_CARD_HEIGHT 80    // Pressure card (no trend label)
-#define AI_CARD_HEIGHT 175         // AI commentary card
+// Two-column card grid
+#define CARD_WIDTH 261         // Card width
 
 // Column positions
-// Math check: 8 + 256 + 8 + 256 + 8 + 256 + 8 = 800 ✓
-#define COL1_X MARGIN                           // 8
-#define COL2_X (COL1_X + CARD_WIDTH + COLUMN_GAP)  // 272
-#define COL3_X (COL2_X + CARD_WIDTH + COLUMN_GAP)  // 536
+#define COL1_X MARGIN                              // 6
+#define COL2_X (COL1_X + CARD_WIDTH + COLUMN_GAP)  // 273
+// Math check: 6 + 261 + 6 + 261 + 6 = 540 ✓
 
-// Forecast column (tall widget for 3-day forecast)
-#define FORECAST_COL_WIDTH CARD_WIDTH
-#define FORECAST_COL_HEIGHT 422  // SCREEN_HEIGHT - HEADER_HEIGHT - MARGIN - STATUS_BAR_HEIGHT - MARGIN
+// Card heights - BALANCED for readability
+#define TEMP_CARD_HEIGHT 150       // Temperature cards (original: 130)
+#define HUMID_CARD_HEIGHT 130      // Humidity cards (original: 100)
+#define AIR_QUALITY_CARD_HEIGHT 140 // CO2 card (original: 90)
+#define PRESSURE_CARD_HEIGHT 140    // Pressure card (original: 90)
+#define AI_CARD_HEIGHT 288         // AI commentary - spans rows 3+4 (original: 310)
+#define BATTERY_CARD_HEIGHT 90     // Battery card (original: 60)
+#define STATUS_INFO_HEIGHT 90      // Status/info card (original: 60)
 
-// Forecast column internal spacing (uses same gap as columns 1 & 2)
-#define FORECAST_SECTION_GAP 8           // Gap between day sections (matches CARD_SPACING)
-#define FORECAST_HEUTE_HEIGHT 128        // HEUTE section height (reduced for tighter fit)
-#define FORECAST_MORGEN_HEIGHT 127       // MORGEN section height
-#define FORECAST_UEBERMORGEN_HEIGHT 127  // UEBERMORGEN section height
-// Math: 128 + 8 + 127 + 8 + 127 = 398px (24px spacing at bottom)
+// Row positions (calculated)
+#define ROW1_Y (HEADER_HEIGHT + MARGIN)                             // 58
+#define ROW2_Y (ROW1_Y + TEMP_CARD_HEIGHT + CARD_SPACING)           // 196
+#define ROW3_Y (ROW2_Y + HUMID_CARD_HEIGHT + CARD_SPACING)          // 304
+#define ROW4_Y (ROW3_Y + AIR_QUALITY_CARD_HEIGHT + CARD_SPACING)    // 402
+#define ROW5_Y (ROW4_Y + PRESSURE_CARD_HEIGHT + CARD_SPACING)       // 500
 
-// Card vertical positions - calculated per column
-// Column 1 & 2 rows (adjusted for different card heights)
-#define ROW1_Y (HEADER_HEIGHT + MARGIN)                              // 53
-#define ROW2_Y (ROW1_Y + TEMP_CARD_HEIGHT + CARD_SPACING)           // 176 (53+115+8)
-#define ROW3_Y (ROW2_Y + HUMID_CARD_HEIGHT + CARD_SPACING)          // 279 (176+95+8)
-#define ROW4_Y (ROW3_Y + AIR_QUALITY_CARD_HEIGHT + CARD_SPACING)    // 367 (279+80+8)
-
-// Card internal layout (adjusted for narrower 256px cards)
-#define CARD_PADDING 6
-#define CARD_LABEL_Y 8           // Label position from card top
-#define CARD_VALUE_Y 28          // Large value position
-#define CARD_TREND_X_OFFSET 200  // Trend icon X offset (adjusted from 340 for 256px width)
-#define CARD_TREND_Y 30          // Trend icon Y position
-#define CARD_DETAIL_Y 75         // Detail text position (min/max, etc)
+// Card internal layout - BALANCED spacing
+#define CARD_PADDING 8           // Moderate padding
+#define CARD_LABEL_Y 10          // Label position from card top
+#define CARD_VALUE_Y 36          // Value position
+#define CARD_TREND_X_OFFSET 210  // Trend icon X offset
+#define CARD_TREND_Y 40          // Trend icon Y position
+#define CARD_DETAIL_Y 95         // Detail text position
 
 // ============================================================================
 // COLUMN 1: INDOOR SENSORS (Netatmo Base Station)
@@ -72,8 +61,11 @@
 #define PRESSURE_X COL1_X
 #define PRESSURE_Y ROW4_Y
 
+#define STATUS_INFO_X COL1_X
+#define STATUS_INFO_Y ROW5_Y
+
 // ============================================================================
-// COLUMN 2: OUTDOOR SENSORS (Netatmo Outdoor + Wind/Rain Modules)
+// COLUMN 2: OUTDOOR SENSORS + AI + BATTERY
 // ============================================================================
 #define OUTDOOR_TEMP_X COL2_X
 #define OUTDOOR_TEMP_Y ROW1_Y
@@ -81,20 +73,14 @@
 #define OUTDOOR_HUMID_X COL2_X
 #define OUTDOOR_HUMID_Y ROW2_Y
 
-#define WIND_X COL2_X
-#define WIND_Y ROW3_Y
+#define AI_WIDGET_X COL2_X
+#define AI_WIDGET_Y ROW3_Y
 
-#define RAIN_X COL2_X
-#define RAIN_Y ROW4_Y
+#define BATTERY_X COL2_X
+#define BATTERY_Y ROW5_Y
 
-// ============================================================================
-// COLUMN 3: 3-DAY FORECAST (met.no API)
-// ============================================================================
-#define FORECAST_COL_X COL3_X
-#define FORECAST_COL_Y ROW1_Y
-
-// Status bar at bottom (thin strip)
-#define STATUS_BAR_Y 465
+// Status bar at bottom
+#define STATUS_BAR_Y (ROW5_Y + BATTERY_CARD_HEIGHT + CARD_SPACING)  // ~568
 #define STATUS_BAR_HEIGHT 15
 
 #endif  // LAYOUT_H
