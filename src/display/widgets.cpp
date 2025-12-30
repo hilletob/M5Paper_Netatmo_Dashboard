@@ -21,31 +21,8 @@ void formatTime(unsigned long timestamp, char* buffer, size_t bufferSize) {
     snprintf(buffer, bufferSize, "%02d:%02d", tm->tm_hour, tm->tm_min);
 }
 
-// Helper to draw temperature with degree symbol (drawn as circle)
-void drawTemperature(M5EPD_Canvas& display, float temp, int16_t x, int16_t y,
-                     const GFXfont* valueFont, const GFXfont* unitFont, uint8_t datum) {
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1f", temp);
-
-    display.setTextDatum(datum);
-    display.setFreeFont(valueFont);
-
-    // Draw temperature value
-    display.drawString(tempStr, x, y);
-
-    // Measure text width to position degree symbol
-    int16_t textWidth = display.textWidth(tempStr);
-
-    // Draw degree symbol as small circle (positioned at top-right of number)
-    int16_t degX = x + textWidth + 6;  // 6px spacing
-    int16_t degY = y + 3;              // Offset from top
-    display.drawCircle(degX, degY, 3, 15);
-    display.drawCircle(degX, degY, 2, 15);  // Thicker circle
-
-    // Draw "C" after degree symbol
-    display.setFreeFont(unitFont);
-    display.drawString("C", degX + 7, y);
-}
+// Note: drawTemperature() function removed - TTF fonts support native ° symbol
+// Temperature values now use: snprintf(buf, sizeof(buf), "%.1f°C", temp);
 
 // Helper to draw trend arrow using geometric shapes
 void drawTrendArrow(M5EPD_Canvas& display, int x, int y, Trend trend) {
@@ -218,7 +195,7 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long times
     // Location on left
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString(location, MARGIN, HEADER_Y + 15);  // Vertically centered
 
     // Date/time on right (same size as location)
@@ -230,7 +207,7 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long times
                 tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900,
                 tm->tm_hour, tm->tm_min);
         display.setTextDatum(TR_DATUM);
-        display.setFreeFont(FSS12);  // Match location font size
+        setRegularFont(display, 12);  // Match location font size
         display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 15);  // Vertically centered
     }
 }
@@ -244,14 +221,15 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
 
     // Label
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Innen", INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_LABEL_Y);
 
     // Large temperature value with degree symbol
-    drawTemperature(display, data.temperature,
-                    INDOOR_TEMP_X + CARD_PADDING,
-                    INDOOR_TEMP_Y + CARD_VALUE_Y,
-                    FSSB18, FSS12, TL_DATUM);
+    char tempStr[16];
+    snprintf(tempStr, sizeof(tempStr), "%.1f°C", data.temperature);
+    setBoldFont(display, 18);
+    display.setTextDatum(TL_DATUM);
+    display.drawString(tempStr, INDOOR_TEMP_X + CARD_PADDING, INDOOR_TEMP_Y + CARD_VALUE_Y);
 
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
@@ -259,18 +237,18 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
     // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         int y = INDOOR_TEMP_Y + CARD_DETAIL_Y;
         int pipeX = INDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
         // Line 1: min
         int x = INDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("min  ", x, y);
         x += display.textWidth("min  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
@@ -281,7 +259,7 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
         display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -294,12 +272,12 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
         // Line 2: max
         y += 18;  // Move to next line
         x = INDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("max  ", x, y);
         x += display.textWidth("max  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
@@ -309,7 +287,7 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
         display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -325,37 +303,38 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Aussen", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         display.drawString("n/a", OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y);
         return;
     }
 
-    drawTemperature(display, data.temperature,
-                    OUTDOOR_TEMP_X + CARD_PADDING,
-                    OUTDOOR_TEMP_Y + CARD_VALUE_Y,
-                    FSSB18, FSS12, TL_DATUM);
+    char tempStr[16];
+    snprintf(tempStr, sizeof(tempStr), "%.1f°C", data.temperature);
+    setBoldFont(display, 18);
+    display.setTextDatum(TL_DATUM);
+    display.drawString(tempStr, OUTDOOR_TEMP_X + CARD_PADDING, OUTDOOR_TEMP_Y + CARD_VALUE_Y);
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
     // Min/max detail with custom degree symbols (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         int y = OUTDOOR_TEMP_Y + CARD_DETAIL_Y;
         int pipeX = OUTDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
 
         // Line 1: min
         int x = OUTDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("min  ", x, y);
         x += display.textWidth("min  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         char tempStr[10];
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
         display.drawString(tempStr, x, y);
@@ -366,7 +345,7 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -379,12 +358,12 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         // Line 2: max
         y += 18;  // Move to next line
         x = OUTDOOR_TEMP_X + CARD_PADDING;
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("max  ", x, y);
         x += display.textWidth("max  ");
 
         // Temperature value in bold
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
         display.drawString(tempStr, x, y);
         x += display.textWidth(tempStr) + 5;
@@ -394,7 +373,7 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         display.drawCircle(x, y + 3, 3, 15);
         x += 5;
 
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.drawString("C  ", x, y);
         x += display.textWidth("C  ");
 
@@ -412,21 +391,21 @@ void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
     // Draw humidity value (bold) and unit (non-bold) separately
     char humidStr[16];
     snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     int valueX = INDOOR_HUMID_X + CARD_PADDING;
     int valueY = INDOOR_HUMID_Y + CARD_VALUE_Y;
     display.drawString(humidStr, valueX, valueY);
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(humidStr);
-    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
+    setRegularFont(display, 12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("%", unitX, valueY);
 
@@ -435,7 +414,7 @@ void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
     char detailStr[32];
     snprintf(detailStr, sizeof(detailStr), "Raumklima: %s", status);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y);
 }
 
@@ -444,11 +423,11 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Aussen", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_LABEL_Y);
 
     if (!data.valid) {
-        display.setFreeFont(FSSB18);
+        setBoldFont(display, 18);
         display.drawString("n/a", OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_VALUE_Y);
         return;
     }
@@ -457,14 +436,14 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
     char humidStr[16];
     snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     int valueX = OUTDOOR_HUMID_X + CARD_PADDING;
     int valueY = OUTDOOR_HUMID_Y + CARD_VALUE_Y;
     display.drawString(humidStr, valueX, valueY);
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(humidStr);
-    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
+    setRegularFont(display, 12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("%", unitX, valueY);
 
@@ -476,7 +455,7 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
 
     // Draw dew point with custom degree symbol (value bold, unit non-bold)
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     int dewX = OUTDOOR_HUMID_X + CARD_PADDING;
     int dewY = OUTDOOR_HUMID_Y + CARD_DETAIL_Y;
 
@@ -487,7 +466,7 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
     // Draw temperature value in bold
     char dewTempStr[10];
     snprintf(dewTempStr, sizeof(dewTempStr), "%.1f", dewPoint);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     display.drawString(dewTempStr, dewX, dewY);
     dewX += display.textWidth(dewTempStr) + 5;
 
@@ -497,7 +476,7 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
     dewX += 5;
 
     // Draw "C" in non-bold
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("C", dewX, dewY);
 }
 
@@ -508,21 +487,21 @@ void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
     // Draw CO2 value (bold) and unit (non-bold) separately
     char co2Str[16];
     snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     int valueX = AIR_QUALITY_X + CARD_PADDING;
     int valueY = AIR_QUALITY_Y + CARD_VALUE_Y;
     display.drawString(co2Str, valueX, valueY);
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(co2Str);
-    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
+    setRegularFont(display, 12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("ppm", unitX, valueY);
 
@@ -536,21 +515,21 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
     // Draw pressure value (bold) and unit (non-bold) separately
     char pressStr[16];
     snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     int valueX = PRESSURE_X + CARD_PADDING;
     int valueY = PRESSURE_Y + CARD_VALUE_Y;
     display.drawString(pressStr, valueX, valueY);
 
     // Draw unit in non-bold (measure width before font switch)
     int valueWidth = display.textWidth(pressStr);
-    display.setFreeFont(FSS12);  // Use FSS18 to match size of FSSB18
+    setRegularFont(display, 12);  // Use FSS18 to match size of FSSB18
     int unitX = valueX + valueWidth + 4;
     display.drawString("hPa", unitX, valueY);
 
@@ -581,7 +560,7 @@ void drawAIWidget(M5EPD_Canvas& display, const String& commentary) {
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     int maxWidth = CARD_WIDTH - (CARD_PADDING * 2);
     int lineHeight = 20;  // FSS9 with extra spacing
 
@@ -630,7 +609,7 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
         const DayTimeForecast& dt = times[i];
         bool hasData = (dt.hour != 0);  // hour == 0 means no data
 
-        display.setFreeFont(FSS12);
+        setRegularFont(display, 12);
         display.setTextDatum(TC_DATUM);
 
         if (hasData) {
@@ -644,7 +623,7 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
             int tempTextY = y + 27;
 
             // Draw temperature number in bold
-            display.setFreeFont(FSSB18);
+            setBoldFont(display, 18);
             int tempWidth = display.textWidth(tempStr);
             int startX = cellX + cellWidth/2 - (tempWidth + 12) / 2;  // Center: text + spacing + degree + C
             display.setTextDatum(TL_DATUM);
@@ -656,7 +635,7 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
             display.drawCircle(degX, tempTextY + 3, 3, 15);
 
             // Draw "C" in non-bold
-            display.setFreeFont(FSS12);
+            setRegularFont(display, 12);
             display.drawString("C", degX + 5, tempTextY);
 
             // Precipitation with unit (value bold, unit non-bold)
@@ -664,21 +643,21 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
             snprintf(precipStr, sizeof(precipStr), "%.1f", dt.precipitationMm / 10.0);
 
             // Calculate centered position for value + space + unit
-            display.setFreeFont(FSSB18);
+            setBoldFont(display, 18);
             int precipValueWidth = display.textWidth(precipStr);
-            display.setFreeFont(FSS12);
+            setRegularFont(display, 12);
             int spaceWidth = display.textWidth(" ");
             int precipUnitWidth = display.textWidth("mm");
             int totalWidth = precipValueWidth + spaceWidth + precipUnitWidth;
             int precipStartX = cellX + cellWidth/2 - totalWidth/2;
 
             // Draw value in bold
-            display.setFreeFont(FSSB18);
+            setBoldFont(display, 18);
             display.setTextDatum(TL_DATUM);
             display.drawString(precipStr, precipStartX, y + 42);
 
             // Draw unit in non-bold with space
-            display.setFreeFont(FSS12);
+            setRegularFont(display, 12);
             display.drawString(" mm", precipStartX + precipValueWidth, y + 42);
         } else {
             // Show placeholder for missing data
@@ -741,7 +720,7 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     display.setTextDatum(TL_DATUM);
 
     // Label
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString("Batterie", BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_LABEL_Y);
 
     // Battery icon
@@ -758,13 +737,13 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     // Percentage text
     char percentStr[8];
     snprintf(percentStr, sizeof(percentStr), "%d%%", percent);
-    display.setFreeFont(FSSB18);
+    setBoldFont(display, 18);
     display.drawString(percentStr, BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_VALUE_Y);
 
     // Voltage
     char voltStr[16];
     snprintf(voltStr, sizeof(voltStr), "%.2fV", voltage / 1000.0);
-    display.setFreeFont(FSS12);
+    setRegularFont(display, 12);
     display.drawString(voltStr, BATTERY_X + CARD_PADDING + 80, BATTERY_Y + CARD_VALUE_Y + 15);
 }
 

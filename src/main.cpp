@@ -52,6 +52,10 @@ void setup() {
     canvas.createCanvas(540, 960);
     canvas.fillCanvas(0);
 
+    // Initialize TTF fonts
+    initTTFFonts(canvas);
+    ESP_LOGI("main", "TTF fonts initialized");
+
     ESP_LOGI("main", "M5Paper initialized (540×960 portrait)");
 
     // Initialize sleep manager (disables watchdog)
@@ -82,19 +86,19 @@ void setup() {
         canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
 
         // Title - Large and bold
-        canvas.setFreeFont(FSSB18);  // FreeSans Bold 18pt
+        setBoldFont(canvas, 18);
         canvas.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
 
         // Subtitle - Medium
-        canvas.setFreeFont(FSS12);  // FreeSans 18pt
+        setRegularFont(canvas, 12);
         canvas.drawString(LOCATION_NAME, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
 
         // Status - Medium
-        canvas.setFreeFont(FSS12);  // FreeSans 18pt (was 12pt)
-        canvas.drawString("Wettergoetter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
+        setRegularFont(canvas, 12);
+        canvas.drawString("Wettergötter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
 
         // Info - Small
-        canvas.setFreeFont(FSS12);  // FreeSans 18pt (was 9pt)
+        setRegularFont(canvas, 12);
         canvas.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
 
         canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
@@ -170,14 +174,14 @@ void setup() {
         canvas.setTextColor(15, 0);
         canvas.setTextDatum(MC_DATUM);
 
-        // Error message with FreeFonts
-        canvas.setFreeFont(FSSB18);  // Large bold
+        // Error message with TTF fonts
+        setBoldFont(canvas, 18);  // Large bold
         canvas.drawString("FEHLER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50);
 
-        canvas.setFreeFont(FSS12);  // Medium
+        setRegularFont(canvas, 12);  // Medium
         canvas.drawString("Keine Daten verfügbar", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 10);
 
-        canvas.setFreeFont(FSS12);  // Medium (was 12pt)
+        setRegularFont(canvas, 12);  // Medium (was 12pt)
         canvas.drawString("WiFi und API prüfen", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
 
         canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);

@@ -219,15 +219,6 @@ String GeminiClient::generateCommentary(const WeatherData& weather, unsigned lon
     String commentary = String(text);
     commentary.trim();  // Remove leading/trailing whitespace
 
-    // Replace umlauts for ASCII-only FreeFonts
-    commentary.replace("ä", "ae");
-    commentary.replace("ö", "oe");
-    commentary.replace("ü", "ue");
-    commentary.replace("Ä", "Ae");
-    commentary.replace("Ö", "Oe");
-    commentary.replace("Ü", "Ue");
-    commentary.replace("ß", "ss");
-
     ESP_LOGI("gemini", "Generated: %s", commentary.c_str());
     return commentary;
 }
