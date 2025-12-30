@@ -227,8 +227,9 @@ void disconnectWiFi() {
 bool syncTime() {
     ESP_LOGI("time", "Syncing time via NTP");
 
-    // Configure NTP servers (timezone is already set in setup())
-    configTime(0, 0, NTP_SERVER_1, NTP_SERVER_2);
+    // Configure NTP with timezone (ESP32-specific function that handles timezone correctly)
+    // POSIX TZ string: CET-1CEST,M3.5.0,M10.5.0/3
+    configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", NTP_SERVER_1, NTP_SERVER_2);
 
     // Wait for time sync (max 15 seconds)
     int retries = 30;
