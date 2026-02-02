@@ -16,7 +16,7 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data);     // R
 void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data);
 void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data);
 
-void drawAIWidget(M5EPD_Canvas& display, const String& commentary);
+void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast);
 void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent);
 void drawStatusInfo(M5EPD_Canvas& display);  // New: status/info card in col1 bottom
 

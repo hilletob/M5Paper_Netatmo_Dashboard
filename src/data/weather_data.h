@@ -139,16 +139,15 @@ struct ForecastData {
     ForecastData() {}
 };
 
-// Complete dashboard data (combination of Netatmo + MeteoSwiss + Gemini AI)
+// Complete dashboard data (combination of Netatmo + Met.no forecast)
 struct DashboardData {
     WeatherData weather;
     ForecastData forecast;
     uint32_t batteryVoltage;    // mV
     uint8_t batteryPercent;     // %
     unsigned long updateTime;   // Unix timestamp of dashboard update
-    String aiCommentary;        // Gemini AI weather commentary
 
-    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0), aiCommentary("") {}
+    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0) {}
 };
 
 // Helper function to convert trend string to enum

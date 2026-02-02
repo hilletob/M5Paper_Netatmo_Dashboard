@@ -1,6 +1,7 @@
 #include "sleep_manager.h"
 #include <time.h>
 #include <M5EPD.h>
+#include <WiFi.h>
 
 // Initialize static RTC variables
 RTC_DATA_ATTR time_t SleepManager::rtcEpoch = 0;
@@ -23,14 +24,26 @@ void SleepManager::deepSleep(uint32_t seconds) {
     ESP_LOGI("sleep", "Entering deep sleep for %u seconds", seconds);
     ESP_LOGI("sleep", "Next RTC epoch: %ld", rtcEpoch);
 
-    // Put M5Paper display to sleep
+    // Ensure display is fully powered down
     M5.EPD.Sleep();
+    delay(500);  // Longer delay to ensure display is fully asleep
+
+    // Shut down WiFi completely (should already be off, but make sure)
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
     delay(100);
 
-    // Configure timer wake-up
-    esp_sleep_enable_timer_wakeup(seconds * 1000000ULL);  // Convert to microseconds
+    // Configure timer wake-up (microseconds)
+    uint64_t sleep_us = (uint64_t)seconds * 1000000ULL;
+    ESP_LOGI("sleep", "Sleep duration: %llu microseconds", sleep_us);
+    esp_sleep_enable_timer_wakeup(sleep_us);
+
+    // Flush serial output before sleeping
+    Serial.flush();
+    delay(100);
 
     // Enter deep sleep
+    ESP_LOGI("sleep", "Entering deep sleep NOW...");
     esp_deep_sleep_start();
 }
 

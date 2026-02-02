@@ -27,7 +27,7 @@
 #define HUMID_CARD_HEIGHT 130      // Humidity cards (original: 100)
 #define AIR_QUALITY_CARD_HEIGHT 140 // CO2 card (original: 90)
 #define PRESSURE_CARD_HEIGHT 140    // Pressure card (original: 90)
-#define AI_CARD_HEIGHT 288         // AI commentary - spans rows 3+4 (original: 310)
+#define FORECAST_CARD_HEIGHT 288   // 3-day forecast - spans rows 3+4
 #define BATTERY_CARD_HEIGHT 90     // Battery card (original: 60)
 #define STATUS_INFO_HEIGHT 90      // Status/info card (original: 60)
 
@@ -65,7 +65,7 @@
 #define STATUS_INFO_Y ROW5_Y
 
 // ============================================================================
-// COLUMN 2: OUTDOOR SENSORS + AI + BATTERY
+// COLUMN 2: OUTDOOR SENSORS + FORECAST + BATTERY
 // ============================================================================
 #define OUTDOOR_TEMP_X COL2_X
 #define OUTDOOR_TEMP_Y ROW1_Y
@@ -73,8 +73,8 @@
 #define OUTDOOR_HUMID_X COL2_X
 #define OUTDOOR_HUMID_Y ROW2_Y
 
-#define AI_WIDGET_X COL2_X
-#define AI_WIDGET_Y ROW3_Y
+#define FORECAST_WIDGET_X COL2_X
+#define FORECAST_WIDGET_Y ROW3_Y
 
 #define BATTERY_X COL2_X
 #define BATTERY_Y ROW5_Y

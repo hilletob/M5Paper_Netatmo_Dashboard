@@ -6,7 +6,7 @@
 
 // API clients
 #include "api/netatmo_client.h"
-#include "api/gemini_client.h"
+#include "api/meteo_client.h"
 
 // Display
 #include "display/layout.h"
@@ -24,7 +24,7 @@
 M5EPD_Canvas canvas(&M5.EPD);
 
 NetatmoClient netatmoClient;
-GeminiClient geminiClient;
+MeteoClient meteoClient;
 
 // Function prototypes
 bool connectWiFi();
@@ -77,37 +77,34 @@ void setup() {
     tzset();
     ESP_LOGI("main", "Timezone configured: CET/CEST");
 
-    // Show splash screen only on first boot
+    // Show loading screen on all boots to avoid white screen during API calls
+    ESP_LOGI("main", "Wake #%d - showing loading screen", SleepManager::getWakeCount());
+    canvas.fillCanvas(0);
+
+    canvas.setTextColor(15, 0);
+    canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
+
     if (SleepManager::getWakeCount() == 1) {
-        ESP_LOGI("main", "First boot - showing splash screen");
-        canvas.fillCanvas(0);
-
-        canvas.setTextColor(15, 0);
-        canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
-
-        // Title - Large and bold
-        setBoldFont(canvas, 18);
+        // First boot - more detailed message
+        setBoldFont(canvas, 48);
         canvas.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
 
-        // Subtitle - Medium
-        setRegularFont(canvas, 12);
+        setRegularFont(canvas, 28);
         canvas.drawString(LOCATION_NAME, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 10);
 
-        // Status - Medium
-        setRegularFont(canvas, 12);
+        setRegularFont(canvas, 28);
         canvas.drawString("Wettergötter werden konsultiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40);
 
-        // Info - Small
-        setRegularFont(canvas, 12);
+        setRegularFont(canvas, 28);
         canvas.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
-
-        canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-
-        delay(1000);
     } else {
-        ESP_LOGI("main", "Wake #%d - fetching data in background", SleepManager::getWakeCount());
-        // M5Paper display already initialized at top of setup()
+        // Subsequent boots - minimal loading message
+        setRegularFont(canvas, 36);
+        canvas.drawString("Daten werden aktualisiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
     }
+
+    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+    delay(500);  // Brief pause to ensure display update completes
 
     // Prepare dashboard data
     DashboardData dashboardData;
@@ -164,6 +161,12 @@ void setup() {
 
     ESP_LOGI("main", "Battery: %d mV (%d%%)", batteryVoltage, batteryPercent);
 
+    // Check for critically low battery (below 3.3V)
+    if (batteryVoltage > 0 && batteryVoltage < 3300) {
+        ESP_LOGW("main", "CRITICAL: Battery voltage too low for reliable deep sleep!");
+        ESP_LOGW("main", "Device may not wake up. Please charge battery.");
+    }
+
     // Update display
     if (dataAvailable) {
         updateDisplay(dashboardData);
@@ -175,13 +178,13 @@ void setup() {
         canvas.setTextDatum(MC_DATUM);
 
         // Error message with TTF fonts
-        setBoldFont(canvas, 18);  // Large bold
+        setBoldFont(canvas, 48);  // Large bold
         canvas.drawString("FEHLER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50);
 
-        setRegularFont(canvas, 12);  // Medium
+        setRegularFont(canvas, 28);  // Medium
         canvas.drawString("Keine Daten verfügbar", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 10);
 
-        setRegularFont(canvas, 12);  // Medium (was 12pt)
+        setRegularFont(canvas, 28);  // Medium
         canvas.drawString("WiFi und API prüfen", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
 
         canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
@@ -272,20 +275,9 @@ bool fetchWeatherData(DashboardData& data) {
         success = false;
     }
 
-    // Met.no forecast - REMOVED (no forecast on M5Paper)
-
-    // Generate Gemini AI commentary (only if we have weather data)
-    if (data.weather.indoor.valid || data.weather.outdoor.valid) {
-        unsigned long timestamp = data.weather.timestamp > 0 ?
-            data.weather.timestamp : time(nullptr);
-
-        data.aiCommentary = geminiClient.generateCommentary(data.weather, timestamp);
-
-        if (data.aiCommentary.length() == 0) {
-            ESP_LOGW("main", "Gemini commentary failed - widget will be empty");
-        } else {
-            ESP_LOGI("main", "Gemini: %s", data.aiCommentary.c_str());
-        }
+    // Fetch met.no forecast data
+    if (!meteoClient.getForecast(data.forecast)) {
+        ESP_LOGW("main", "Failed to fetch forecast data");
     }
 
     // Even if one API fails, we can still show partial data

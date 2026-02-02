@@ -10,8 +10,8 @@
 #include "ttf_helpers.h"
 
 // Font size definitions (use with setBoldFont/setRegularFont)
-#define FONT_SIZE_SMALL  9
-#define FONT_SIZE_MEDIUM 12
-#define FONT_SIZE_LARGE  18
+#define FONT_SIZE_SMALL  24
+#define FONT_SIZE_MEDIUM 28
+#define FONT_SIZE_LARGE  48
 
 #endif  // FONTS_H
