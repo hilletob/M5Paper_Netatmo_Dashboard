@@ -23,28 +23,28 @@
 // Math check: 6 + 261 + 6 + 261 + 6 = 540 ✓
 
 // Card heights - BALANCED for readability
-#define TEMP_CARD_HEIGHT 150       // Temperature cards (original: 130)
-#define HUMID_CARD_HEIGHT 130      // Humidity cards (original: 100)
-#define AIR_QUALITY_CARD_HEIGHT 140 // CO2 card (original: 90)
-#define PRESSURE_CARD_HEIGHT 140    // Pressure card (original: 90)
-#define FORECAST_CARD_HEIGHT 288   // 3-day forecast - spans rows 3+4
-#define BATTERY_CARD_HEIGHT 90     // Battery card (original: 60)
-#define STATUS_INFO_HEIGHT 90      // Status/info card (original: 60)
+#define TEMP_CARD_HEIGHT 200        // Temperature cards – more vertical room for min/max
+#define HUMID_CARD_HEIGHT 130       // Humidity cards
+#define AIR_QUALITY_CARD_HEIGHT 140 // CO2 card
+#define PRESSURE_CARD_HEIGHT 140    // Pressure card
+#define FORECAST_CARD_HEIGHT 288    // 3-day forecast - spans rows 3+4
+#define BATTERY_CARD_HEIGHT 90      // Battery card
+#define STATUS_INFO_HEIGHT 90       // Status/info card
 
 // Row positions (calculated)
-#define ROW1_Y (HEADER_HEIGHT + MARGIN)                             // 58
-#define ROW2_Y (ROW1_Y + TEMP_CARD_HEIGHT + CARD_SPACING)           // 196
-#define ROW3_Y (ROW2_Y + HUMID_CARD_HEIGHT + CARD_SPACING)          // 304
-#define ROW4_Y (ROW3_Y + AIR_QUALITY_CARD_HEIGHT + CARD_SPACING)    // 402
-#define ROW5_Y (ROW4_Y + PRESSURE_CARD_HEIGHT + CARD_SPACING)       // 500
+#define ROW1_Y (HEADER_HEIGHT + MARGIN)                             // 61
+#define ROW2_Y (ROW1_Y + TEMP_CARD_HEIGHT + CARD_SPACING)           // 267
+#define ROW3_Y (ROW2_Y + HUMID_CARD_HEIGHT + CARD_SPACING)          // 403
+#define ROW4_Y (ROW3_Y + AIR_QUALITY_CARD_HEIGHT + CARD_SPACING)    // 549
+#define ROW5_Y (ROW4_Y + PRESSURE_CARD_HEIGHT + CARD_SPACING)       // 695
 
 // Card internal layout - BALANCED spacing
 #define CARD_PADDING 8           // Moderate padding
-#define CARD_LABEL_Y 10          // Label position from card top
+#define CARD_LABEL_Y 6           // Label position from card top
 #define CARD_VALUE_Y 36          // Value position
 #define CARD_TREND_X_OFFSET 210  // Trend icon X offset
 #define CARD_TREND_Y 40          // Trend icon Y position
-#define CARD_DETAIL_Y 95         // Detail text position
+#define CARD_DETAIL_Y 96         // Detail text position (higher to fit larger cards)
 
 // ============================================================================
 // COLUMN 1: INDOOR SENSORS (Netatmo Base Station)

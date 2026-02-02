@@ -5,9 +5,10 @@
 #include "../config.h"
 #include <time.h>
 
-// Helper to draw a card border
+// Helper to draw a card background + border (clears previous ghosting)
 void drawCard(M5EPD_Canvas& display, int x, int y, int height) {
-    display.drawRect(x, y, CARD_WIDTH, height, 15);
+    display.fillRect(x, y, CARD_WIDTH, height, 0);   // white background
+    display.drawRect(x, y, CARD_WIDTH, height, 15);  // border
 }
 
 // Helper to format timestamp as time (HH:MM)
@@ -215,7 +216,7 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long times
 void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(INDOOR_TEMP_X, INDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, 15);
+    drawCard(display, INDOOR_TEMP_X, INDOOR_TEMP_Y, TEMP_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
 
@@ -234,72 +235,31 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
     // Trend arrow
     drawTrendArrow(display, INDOOR_TEMP_X + CARD_TREND_X_OFFSET, INDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
-    // Min/max detail with custom degree symbols (two lines)
+    // Min/max detail (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        setRegularFont(display, 28);
         int y = INDOOR_TEMP_Y + CARD_DETAIL_Y;
-        int pipeX = INDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
+        int x = INDOOR_TEMP_X + CARD_PADDING;
 
         // Line 1: min
-        int x = INDOOR_TEMP_X + CARD_PADDING;
-        setRegularFont(display, 28);
-        display.drawString("min  ", x, y);
-        x += display.textWidth("min  ");
-
-        // Temperature value in bold
-        setBoldFont(display, 48);
-        char tempStr[10];
-        snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
-        display.drawString(tempStr, x, y);
-        x += display.textWidth(tempStr) + 5;
-
-        // Degree symbol
-        display.drawCircle(x, y + 3, 2, 15);
-        display.drawCircle(x, y + 3, 3, 15);
-        x += 5;
-
-        setRegularFont(display, 28);
-        display.drawString("C  ", x, y);
-        x += display.textWidth("C  ");
-
-        // Min time
+        char minStr[32];
         char timeStr[16];
         formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
-        display.drawString(timeStr, x, y);
-        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+        snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
+        setRegularFont(display, 24);
+        display.drawString(minStr, x, y);
 
         // Line 2: max
-        y += 55;  // Move to next line (larger fonts)
-        x = INDOOR_TEMP_X + CARD_PADDING;
-        setRegularFont(display, 28);
-        display.drawString("max  ", x, y);
-        x += display.textWidth("max  ");
-
-        // Temperature value in bold
-        setBoldFont(display, 48);
-        snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
-        display.drawString(tempStr, x, y);
-        x += display.textWidth(tempStr) + 5;
-
-        // Degree symbol
-        display.drawCircle(x, y + 3, 2, 15);
-        display.drawCircle(x, y + 3, 3, 15);
-        x += 5;
-
-        setRegularFont(display, 28);
-        display.drawString("C  ", x, y);
-        x += display.textWidth("C  ");
-
-        // Max time
+        y += 34;
+        char maxStr[32];
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
-        display.drawString(timeStr, x, y);
-        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+        snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
+        display.drawString(maxStr, x, y);
     }
 }
 
 void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
-    display.drawRect(OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y, CARD_WIDTH, TEMP_CARD_HEIGHT, 15);
+    drawCard(display, OUTDOOR_TEMP_X, OUTDOOR_TEMP_Y, TEMP_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
@@ -320,67 +280,26 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
 
     drawTrendArrow(display, OUTDOOR_TEMP_X + CARD_TREND_X_OFFSET, OUTDOOR_TEMP_Y + CARD_TREND_Y, data.temperatureTrend);
 
-    // Min/max detail with custom degree symbols (two lines)
+    // Min/max detail (two lines)
     if (data.minTemp != 0 || data.maxTemp != 0) {
         display.setTextDatum(TL_DATUM);
-        setRegularFont(display, 28);
         int y = OUTDOOR_TEMP_Y + CARD_DETAIL_Y;
-        int pipeX = OUTDOOR_TEMP_X + 120;  // Fixed position for pipe alignment
+        int x = OUTDOOR_TEMP_X + CARD_PADDING;
 
         // Line 1: min
-        int x = OUTDOOR_TEMP_X + CARD_PADDING;
-        setRegularFont(display, 28);
-        display.drawString("min  ", x, y);
-        x += display.textWidth("min  ");
-
-        // Temperature value in bold
-        setBoldFont(display, 48);
-        char tempStr[10];
-        snprintf(tempStr, sizeof(tempStr), "%.1f", data.minTemp);
-        display.drawString(tempStr, x, y);
-        x += display.textWidth(tempStr) + 5;
-
-        // Degree symbol
-        display.drawCircle(x, y + 3, 2, 15);
-        display.drawCircle(x, y + 3, 3, 15);
-        x += 5;
-
-        setRegularFont(display, 28);
-        display.drawString("C  ", x, y);
-        x += display.textWidth("C  ");
-
-        // Min time
+        char minStr[32];
         char timeStr[16];
         formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
-        display.drawString(timeStr, x, y);
-        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+        snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
+        setRegularFont(display, 24);
+        display.drawString(minStr, x, y);
 
         // Line 2: max
-        y += 55;  // Move to next line (larger fonts)
-        x = OUTDOOR_TEMP_X + CARD_PADDING;
-        setRegularFont(display, 28);
-        display.drawString("max  ", x, y);
-        x += display.textWidth("max  ");
-
-        // Temperature value in bold
-        setBoldFont(display, 48);
-        snprintf(tempStr, sizeof(tempStr), "%.1f", data.maxTemp);
-        display.drawString(tempStr, x, y);
-        x += display.textWidth(tempStr) + 5;
-
-        // Degree symbol
-        display.drawCircle(x, y + 3, 2, 15);
-        display.drawCircle(x, y + 3, 3, 15);
-        x += 5;
-
-        setRegularFont(display, 28);
-        display.drawString("C  ", x, y);
-        x += display.textWidth("C  ");
-
-        // Max time
+        y += 34;
+        char maxStr[32];
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
-        display.drawString(timeStr, x, y);
-        display.drawString(" Uhr", x + display.textWidth("00:00"), y);
+        snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
+        display.drawString(maxStr, x, y);
     }
 }
 
@@ -394,20 +313,14 @@ void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
     setRegularFont(display, 28);
     display.drawString("Innen", INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_LABEL_Y);
 
-    // Draw humidity value (bold) and unit (non-bold) separately
+    // Draw humidity value with % as single string (bold)
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
     display.setTextDatum(TL_DATUM);
     setBoldFont(display, 48);
     int valueX = INDOOR_HUMID_X + CARD_PADDING;
     int valueY = INDOOR_HUMID_Y + CARD_VALUE_Y;
     display.drawString(humidStr, valueX, valueY);
-
-    // Draw unit in non-bold (measure width before font switch)
-    int valueWidth = display.textWidth(humidStr);
-    setRegularFont(display, 28);  // Use FSS18 to match size of FSSB18
-    int unitX = valueX + valueWidth + 15;  // Increased spacing for larger fonts
-    display.drawString("%", unitX, valueY);
 
     // Climate status
     const char* status = getHumidityComfort(data.humidity);
@@ -432,20 +345,14 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         return;
     }
 
-    // Draw humidity value (bold) and unit (non-bold) separately
+    // Draw humidity value with % as single string (bold)
     char humidStr[16];
-    snprintf(humidStr, sizeof(humidStr), "%d", data.humidity);
+    snprintf(humidStr, sizeof(humidStr), "%d%%", data.humidity);
     display.setTextDatum(TL_DATUM);
     setBoldFont(display, 48);
     int valueX = OUTDOOR_HUMID_X + CARD_PADDING;
     int valueY = OUTDOOR_HUMID_Y + CARD_VALUE_Y;
     display.drawString(humidStr, valueX, valueY);
-
-    // Draw unit in non-bold (measure width before font switch)
-    int valueWidth = display.textWidth(humidStr);
-    setRegularFont(display, 28);  // Use FSS18 to match size of FSSB18
-    int unitX = valueX + valueWidth + 15;  // Increased spacing for larger fonts
-    display.drawString("%", unitX, valueY);
 
     // Dew point calculation (Magnus formula)
     float a = 17.27;
@@ -453,44 +360,25 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
     float alpha = ((a * data.temperature) / (b + data.temperature)) + log(data.humidity / 100.0);
     float dewPoint = (b * alpha) / (a - alpha);
 
-    // Draw dew point with custom degree symbol (value bold, unit non-bold)
+    // Draw dew point as single string
+    char dewStr[32];
+    snprintf(dewStr, sizeof(dewStr), "Taupunkt: %.1f°C", dewPoint);
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
-    int dewX = OUTDOOR_HUMID_X + CARD_PADDING;
-    int dewY = OUTDOOR_HUMID_Y + CARD_DETAIL_Y;
-
-    // Draw "Taupunkt: " in non-bold
-    display.drawString("Taupunkt: ", dewX, dewY);
-    dewX += display.textWidth("Taupunkt: ");
-
-    // Draw temperature value in bold
-    char dewTempStr[10];
-    snprintf(dewTempStr, sizeof(dewTempStr), "%.1f", dewPoint);
-    setBoldFont(display, 48);
-    display.drawString(dewTempStr, dewX, dewY);
-    dewX += display.textWidth(dewTempStr) + 5;
-
-    // Draw degree symbol (circle)
-    display.drawCircle(dewX, dewY + 3, 2, 15);
-    display.drawCircle(dewX, dewY + 3, 3, 15);
-    dewX += 5;
-
-    // Draw "C" in non-bold
-    setRegularFont(display, 28);
-    display.drawString("C", dewX, dewY);
+    display.drawString(dewStr, OUTDOOR_HUMID_X + CARD_PADDING, OUTDOOR_HUMID_Y + CARD_DETAIL_Y);
 }
 
 void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(AIR_QUALITY_X, AIR_QUALITY_Y, CARD_WIDTH, AIR_QUALITY_CARD_HEIGHT, 15);
+    drawCard(display, AIR_QUALITY_X, AIR_QUALITY_Y, AIR_QUALITY_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
-    display.drawString("Luftqualitaet innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
+    display.drawString("Luftqualität innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
-    // Draw CO2 value (bold) and unit (non-bold) separately
+    // Draw CO2 value (bold)
     char co2Str[16];
     snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
     display.setTextDatum(TL_DATUM);
@@ -499,11 +387,9 @@ void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
     int valueY = AIR_QUALITY_Y + CARD_VALUE_Y;
     display.drawString(co2Str, valueX, valueY);
 
-    // Draw unit in non-bold (measure width before font switch)
-    int valueWidth = display.textWidth(co2Str);
-    setRegularFont(display, 28);  // Use FSS18 to match size of FSSB18
-    int unitX = valueX + valueWidth + 15;  // Increased spacing for larger fonts
-    display.drawString("ppm", unitX, valueY);
+    // Draw unit on next line
+    setRegularFont(display, 28);
+    display.drawString("ppm", valueX, valueY + 50);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 }
@@ -511,14 +397,14 @@ void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
 void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     if (!data.valid) return;
 
-    display.drawRect(PRESSURE_X, PRESSURE_Y, CARD_WIDTH, PRESSURE_CARD_HEIGHT, 15);
+    drawCard(display, PRESSURE_X, PRESSURE_Y, PRESSURE_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
     display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
-    // Draw pressure value (bold) and unit (non-bold) separately
+    // Draw pressure value (bold)
     char pressStr[16];
     snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
     display.setTextDatum(TL_DATUM);
@@ -527,11 +413,9 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     int valueY = PRESSURE_Y + CARD_VALUE_Y;
     display.drawString(pressStr, valueX, valueY);
 
-    // Draw unit in non-bold (measure width before font switch)
-    int valueWidth = display.textWidth(pressStr);
-    setRegularFont(display, 28);  // Use FSS18 to match size of FSSB18
-    int unitX = valueX + valueWidth + 15;  // Increased spacing for larger fonts
-    display.drawString("hPa", unitX, valueY);
+    // Draw unit on next line
+    setRegularFont(display, 28);
+    display.drawString("hPa", valueX, valueY + 50);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 }
@@ -549,7 +433,7 @@ void drawForecast6hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) 
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
     // Position: FORECAST_WIDGET_X, FORECAST_WIDGET_Y
     // Size: CARD_WIDTH × FORECAST_CARD_HEIGHT (288px)
-    display.drawRect(FORECAST_WIDGET_X, FORECAST_WIDGET_Y, CARD_WIDTH, FORECAST_CARD_HEIGHT, 15);
+    drawCard(display, FORECAST_WIDGET_X, FORECAST_WIDGET_Y, FORECAST_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
 
@@ -589,32 +473,21 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         const char* icon = getIconFromCode(df.symbolCode);
         drawWeatherIcon(display, rowX + 35, rowY - 4, icon, 32);
 
-        // Temperature range (min/max)
-        char tempStr[20];
-        snprintf(tempStr, sizeof(tempStr), "%d/%d", df.tempMin, df.tempMax);
-        setBoldFont(display, 48);
+        // Temperature range with °C as single string
+        char tempStr[24];
+        snprintf(tempStr, sizeof(tempStr), "%d/%d°C", df.tempMin, df.tempMax);
+        setBoldFont(display, 36);
         display.setTextDatum(TL_DATUM);
         int tempX = rowX + 75;
         display.drawString(tempStr, tempX, rowY);
 
-        // Degree symbol
-        int tempWidth = display.textWidth(tempStr);
-        display.drawCircle(tempX + tempWidth + 4, rowY + 3, 2, 15);
-        display.drawCircle(tempX + tempWidth + 4, rowY + 3, 3, 15);
-        setRegularFont(display, 28);
-        display.drawString("C", tempX + tempWidth + 9, rowY);
-
-        // Precipitation (if any)
+        // Precipitation on second line (if any)
         if (df.precipSum > 0) {
-            char precipStr[10];
-            snprintf(precipStr, sizeof(precipStr), "%.1f", df.precipSum / 10.0);
-            setRegularFont(display, 28);
-            display.setTextDatum(TR_DATUM);
-            display.drawString("mm", FORECAST_WIDGET_X + CARD_WIDTH - CARD_PADDING, rowY);
-
-            int unitWidth = display.textWidth("mm");
-            setBoldFont(display, 48);
-            display.drawString(precipStr, FORECAST_WIDGET_X + CARD_WIDTH - CARD_PADDING - unitWidth - 5, rowY);
+            char precipStr[16];
+            snprintf(precipStr, sizeof(precipStr), "%.1fmm", df.precipSum / 10.0);
+            setRegularFont(display, 24);
+            display.setTextDatum(TL_DATUM);
+            display.drawString(precipStr, tempX, rowY + 38);
         }
     }
 }
@@ -629,7 +502,6 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
         const DayTimeForecast& dt = times[i];
         bool hasData = (dt.hour != 0);  // hour == 0 means no data
 
-        setRegularFont(display, 28);
         display.setTextDatum(TC_DATUM);
 
         if (hasData) {
@@ -637,50 +509,20 @@ void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
             const char* icon = getIconFromCode(dt.symbolCode);
             drawWeatherIcon(display, cellX + cellWidth/2 - 12, y, icon, 24);
 
-            // Temperature with custom degree symbol (matching other widgets)
-            char tempStr[6];
-            snprintf(tempStr, sizeof(tempStr), "%d", dt.temperature);
-            int tempTextY = y + 27;
+            // Temperature as single string
+            char tempStr[10];
+            snprintf(tempStr, sizeof(tempStr), "%d°C", dt.temperature);
+            setBoldFont(display, 32);
+            display.drawString(tempStr, cellX + cellWidth/2, y + 27);
 
-            // Draw temperature number in bold
-            setBoldFont(display, 48);
-            int tempWidth = display.textWidth(tempStr);
-            int startX = cellX + cellWidth/2 - (tempWidth + 12) / 2;  // Center: text + spacing + degree + C
-            display.setTextDatum(TL_DATUM);
-            display.drawString(tempStr, startX, tempTextY);
-
-            // Draw degree symbol (two circles) with spacing
-            int degX = startX + tempWidth + 4;  // Increased spacing from 2 to 4
-            display.drawCircle(degX, tempTextY + 3, 2, 15);
-            display.drawCircle(degX, tempTextY + 3, 3, 15);
-
-            // Draw "C" in non-bold
-            setRegularFont(display, 28);
-            display.drawString("C", degX + 5, tempTextY);
-
-            // Precipitation with unit (value bold, unit non-bold)
-            char precipStr[10];
-            snprintf(precipStr, sizeof(precipStr), "%.1f", dt.precipitationMm / 10.0);
-
-            // Calculate centered position for value + space + unit
-            setBoldFont(display, 48);
-            int precipValueWidth = display.textWidth(precipStr);
-            setRegularFont(display, 28);
-            int spaceWidth = display.textWidth(" ");
-            int precipUnitWidth = display.textWidth("mm");
-            int totalWidth = precipValueWidth + spaceWidth + precipUnitWidth;
-            int precipStartX = cellX + cellWidth/2 - totalWidth/2;
-
-            // Draw value in bold
-            setBoldFont(display, 48);
-            display.setTextDatum(TL_DATUM);
-            display.drawString(precipStr, precipStartX, y + 42);
-
-            // Draw unit in non-bold with space
-            setRegularFont(display, 28);
-            display.drawString(" mm", precipStartX + precipValueWidth, y + 42);
+            // Precipitation as single string
+            char precipStr[12];
+            snprintf(precipStr, sizeof(precipStr), "%.1fmm", dt.precipitationMm / 10.0);
+            setRegularFont(display, 24);
+            display.drawString(precipStr, cellX + cellWidth/2, y + 55);
         } else {
             // Show placeholder for missing data
+            setRegularFont(display, 28);
             display.drawString("-", cellX + cellWidth/2, y + 15);
         }
     }
@@ -734,7 +576,7 @@ void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
 }
 
 void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent) {
-    display.drawRect(BATTERY_X, BATTERY_Y, CARD_WIDTH, BATTERY_CARD_HEIGHT, 15);
+    drawCard(display, BATTERY_X, BATTERY_Y, BATTERY_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
@@ -770,7 +612,7 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
 void drawStatusInfo(M5EPD_Canvas& display) {
     // Optional: Status/info card in column 1 bottom
     // For now, leave empty (or draw a minimal card)
-    display.drawRect(STATUS_INFO_X, STATUS_INFO_Y, CARD_WIDTH, STATUS_INFO_HEIGHT, 15);
+    drawCard(display, STATUS_INFO_X, STATUS_INFO_Y, STATUS_INFO_HEIGHT);
 }
 
 // Legacy function names for compatibility
