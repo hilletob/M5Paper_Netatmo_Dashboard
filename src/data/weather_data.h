@@ -198,4 +198,43 @@ inline const char* getIconFromCode(uint8_t symbolCode) {
     }
 }
 
+// MeteoSwiss pictogram code to internal symbol code mapping
+// MeteoSwiss codes: 1-44 (see https://data.geo.admin.ch)
+// Internal codes: 0=sunny, 1=partly_cloudy, 2=cloudy, 3=rain, 4=snow
+inline uint8_t parseMeteoSwissPictogram(int pictogramCode) {
+    // Sunny conditions (1-2)
+    if (pictogramCode == 1 || pictogramCode == 2) return 0;  // sunny
+
+    // Partly cloudy / fair (3-5, 35 = night partly cloudy)
+    if (pictogramCode == 3 || pictogramCode == 4 || pictogramCode == 5 || pictogramCode == 35) return 1;  // partly_cloudy
+
+    // Cloudy (6-8)
+    if (pictogramCode >= 6 && pictogramCode <= 8) return 2;  // cloudy
+
+    // Fog (9-11)
+    if (pictogramCode >= 9 && pictogramCode <= 11) return 2;  // cloudy (fog mapped to cloudy)
+
+    // Showers / light rain (12-14)
+    if (pictogramCode >= 12 && pictogramCode <= 14) return 3;  // rain
+
+    // Thunderstorms (15-17)
+    if (pictogramCode >= 15 && pictogramCode <= 17) return 3;  // rain (thunder mapped to rain)
+
+    // Rain (18-21)
+    if (pictogramCode >= 18 && pictogramCode <= 21) return 3;  // rain
+
+    // Snow (22-28)
+    if (pictogramCode >= 22 && pictogramCode <= 28) return 4;  // snow
+
+    // Sleet / freezing rain (29-34)
+    if (pictogramCode >= 29 && pictogramCode <= 34) return 3;  // rain (sleet mapped to rain)
+
+    // Night variations (36-44) - map similarly
+    if (pictogramCode == 36 || pictogramCode == 37) return 0;  // clear night -> sunny
+    if (pictogramCode >= 38 && pictogramCode <= 40) return 3;  // night rain
+    if (pictogramCode >= 41 && pictogramCode <= 44) return 4;  // night snow
+
+    return 2;  // Default: cloudy
+}
+
 #endif  // WEATHER_DATA_H

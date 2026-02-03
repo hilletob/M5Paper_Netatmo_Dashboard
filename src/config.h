@@ -44,6 +44,11 @@
 #define LOCATION_NAME "Davos"
 #endif
 
+// MeteoSwiss Point ID (68 = Luzern)
+#ifndef METEOSWISS_POINT_ID
+#define METEOSWISS_POINT_ID 68
+#endif
+
 // Update Configuration
 #ifndef UPDATE_INTERVAL_MIN
 #define UPDATE_INTERVAL_MIN 11  // Minutes after last Netatmo update

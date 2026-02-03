@@ -432,7 +432,7 @@ void drawForecast6hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) 
 
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
     // Position: FORECAST_WIDGET_X, FORECAST_WIDGET_Y
-    // Size: CARD_WIDTH × FORECAST_CARD_HEIGHT (288px)
+    // Size: CARD_WIDTH × FORECAST_CARD_HEIGHT (320px)
     drawCard(display, FORECAST_WIDGET_X, FORECAST_WIDGET_Y, FORECAST_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
@@ -448,9 +448,10 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
 
     const char* dayNames[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
 
-    // Draw 3 days in a vertical layout
-    int dayHeight = 80;  // Height per day row
-    int startY = FORECAST_WIDGET_Y + 45;  // After label
+    // Draw 3 days in a vertical layout with larger icons
+    // Layout: Day [ICON 48px] Temp Precip
+    int dayHeight = 90;   // Increased height per row for 48px icons
+    int startY = FORECAST_WIDGET_Y + 48;  // After label
 
     for (int day = 0; day < 3; day++) {
         const DailyForecast& df = forecast.days[day];
@@ -458,37 +459,35 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         int rowY = startY + (day * dayHeight);
         int rowX = FORECAST_WIDGET_X + CARD_PADDING;
 
-        // Day label (Mo, Di, Mi, etc.)
+        // Day label (Mo, Di, Mi, etc.) - vertically centered with icon
         int dayOfWeek = (tm->tm_wday + day) % 7;
         setRegularFont(display, 28);
         display.setTextDatum(TL_DATUM);
-        display.drawString(dayNames[dayOfWeek], rowX, rowY);
+        display.drawString(dayNames[dayOfWeek], rowX, rowY + 12);
 
         if (!df.valid) {
-            display.drawString("--", rowX + 40, rowY);
+            display.drawString("--", rowX + 40, rowY + 12);
             continue;
         }
 
-        // Weather icon (32x32)
+        // Weather icon (48x48) - larger for better visibility
         const char* icon = getIconFromCode(df.symbolCode);
-        drawWeatherIcon(display, rowX + 35, rowY - 4, icon, 32);
+        drawWeatherIcon(display, rowX + 32, rowY - 2, icon, 48);
 
-        // Temperature range with °C as single string
+        // Temperature range: min/max°C
         char tempStr[24];
         snprintf(tempStr, sizeof(tempStr), "%d/%d°C", df.tempMin, df.tempMax);
-        setBoldFont(display, 36);
+        setBoldFont(display, 32);
         display.setTextDatum(TL_DATUM);
-        int tempX = rowX + 75;
-        display.drawString(tempStr, tempX, rowY);
+        int tempX = rowX + 88;  // After 48px icon
+        display.drawString(tempStr, tempX, rowY + 4);
 
-        // Precipitation on second line (if any)
-        if (df.precipSum > 0) {
-            char precipStr[16];
-            snprintf(precipStr, sizeof(precipStr), "%.1fmm", df.precipSum / 10.0);
-            setRegularFont(display, 24);
-            display.setTextDatum(TL_DATUM);
-            display.drawString(precipStr, tempX, rowY + 38);
-        }
+        // Precipitation on same line (right side) or second line
+        char precipStr[16];
+        snprintf(precipStr, sizeof(precipStr), "%.1fmm", df.precipSum / 10.0);
+        setRegularFont(display, 24);
+        display.setTextDatum(TL_DATUM);
+        display.drawString(precipStr, tempX, rowY + 42);
     }
 }
 

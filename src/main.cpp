@@ -45,7 +45,6 @@ void setup() {
     // M5Paper hardware initialization
     M5.begin();
     M5.EPD.SetRotation(90);  // Portrait mode
-    M5.EPD.Clear(true);
     M5.RTC.begin();
 
     // Create canvas
@@ -77,15 +76,15 @@ void setup() {
     tzset();
     ESP_LOGI("main", "Timezone configured: CET/CEST");
 
-    // Show loading screen on all boots to avoid white screen during API calls
-    ESP_LOGI("main", "Wake #%d - showing loading screen", SleepManager::getWakeCount());
-    canvas.fillCanvas(0);
-
-    canvas.setTextColor(15, 0);
-    canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
-
+    // Show loading screen only on first boot; keep last display on subsequent wakes
     if (SleepManager::getWakeCount() == 1) {
-        // First boot - more detailed message
+        ESP_LOGI("main", "Wake #%d - showing initial loading screen", SleepManager::getWakeCount());
+        M5.EPD.Clear(true);
+
+        canvas.fillCanvas(0);
+        canvas.setTextColor(15, 0);
+        canvas.setTextDatum(MC_DATUM);  // Middle-center for centered text
+
         setBoldFont(canvas, 48);
         canvas.drawString("Wetter Dashboard", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 60);
 
@@ -97,14 +96,12 @@ void setup() {
 
         setRegularFont(canvas, 28);
         canvas.drawString("(Erstmalige Initialisierung)", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 80);
-    } else {
-        // Subsequent boots - minimal loading message
-        setRegularFont(canvas, 36);
-        canvas.drawString("Daten werden aktualisiert...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
-    }
 
-    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-    delay(500);  // Brief pause to ensure display update completes
+        canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+        delay(500);  // Brief pause to ensure display update completes
+    } else {
+        ESP_LOGI("main", "Wake #%d - keeping previous display during data refresh", SleepManager::getWakeCount());
+    }
 
     // Prepare dashboard data
     DashboardData dashboardData;

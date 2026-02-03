@@ -194,13 +194,18 @@ bool MeteoClient::getForecast(ForecastData& data) {
     }
 
     // 6. Parse JSON (GeoJSON format)
-    WiFiClient* stream = http.getStreamPtr();
-    JsonDocument doc;  // ArduinoJson v7 auto-sizing
+    // Read full response first to avoid stream timeout issues
+    String payload = http.getString();
+    http.end();
 
+    ESP_LOGI("meteo", "Response size: %d bytes", payload.length());
     ESP_LOGI("meteo", "Free heap before JSON: %u", ESP.getFreeHeap());
 
-    DeserializationError error = deserializeJson(doc, *stream);
-    http.end();
+    JsonDocument doc;  // ArduinoJson v7 auto-sizing
+    DeserializationError error = deserializeJson(doc, payload);
+
+    // Free the payload string memory
+    payload = String();
 
     if (error) {
         ESP_LOGE("meteo", "JSON parse error: %s", error.c_str());

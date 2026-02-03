@@ -27,7 +27,7 @@
 #define HUMID_CARD_HEIGHT 130       // Humidity cards
 #define AIR_QUALITY_CARD_HEIGHT 140 // CO2 card
 #define PRESSURE_CARD_HEIGHT 140    // Pressure card
-#define FORECAST_CARD_HEIGHT 288    // 3-day forecast - spans rows 3+4
+#define FORECAST_CARD_HEIGHT 320    // 3-day forecast - larger icons
 #define BATTERY_CARD_HEIGHT 90      // Battery card
 #define STATUS_INFO_HEIGHT 90       // Status/info card
 
