@@ -199,8 +199,8 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updat
     setRegularFont(display, 28);
     display.drawString(location, MARGIN, HEADER_Y + 12);
 
-    // Right side: two lines with smaller font
-    setRegularFont(display, 22);
+    // Right side: two lines with small font
+    setRegularFont(display, 24);
     display.setTextDatum(TR_DATUM);
 
     // Line 1: Last Netatmo update time
@@ -208,9 +208,9 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updat
         char updateStr[32];
         time_t t = updateTime;
         struct tm* tm = localtime(&t);
-        snprintf(updateStr, sizeof(updateStr), "Aktualisiert: %02d:%02d",
-                tm->tm_hour, tm->tm_min);
-        display.drawString(updateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 5);
+        snprintf(updateStr, sizeof(updateStr), "Aktualisiert: %02d.%02d. %02d:%02d",
+                tm->tm_mday, tm->tm_mon + 1, tm->tm_hour, tm->tm_min);
+        display.drawString(updateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 3);
     }
 
     // Line 2: Next scheduled wake time
@@ -218,9 +218,9 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updat
         char nextStr[32];
         time_t t = nextWakeTime;
         struct tm* tm = localtime(&t);
-        snprintf(nextStr, sizeof(nextStr), "Nächstes Update: %02d:%02d",
+        snprintf(nextStr, sizeof(nextStr), "Nächstes: %02d:%02d",
                 tm->tm_hour, tm->tm_min);
-        display.drawString(nextStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 29);
+        display.drawString(nextStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 28);
     }
 }
 
@@ -589,15 +589,10 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     drawCard(display, BATTERY_X, BATTERY_Y, BATTERY_CARD_HEIGHT);
 
     display.setTextColor(15, 0);
-    display.setTextDatum(TL_DATUM);
 
-    // Label
-    setRegularFont(display, 28);
-    display.drawString("Batterie", BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_LABEL_Y);
-
-    // Battery icon
+    // Battery icon (top right of card)
     int iconX = BATTERY_X + CARD_WIDTH - 80;
-    int iconY = BATTERY_Y + CARD_VALUE_Y;
+    int iconY = BATTERY_Y + 12;
     display.drawRect(iconX, iconY, 60, 24, 15);
     display.fillRect(iconX + 60, iconY + 6, 4, 12, 15);  // Nub
 
@@ -606,17 +601,17 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     uint8_t fillColor = (percent < 20) ? 12 : 15;  // Darker gray for low
     display.fillRect(iconX + 2, iconY + 2, fillW, 20, fillColor);
 
-    // Percentage text
+    // Percentage and voltage on one line, same font size
+    display.setTextDatum(TL_DATUM);
+    setRegularFont(display, 28);
+
     char percentStr[8];
     snprintf(percentStr, sizeof(percentStr), "%d%%", percent);
-    setBoldFont(display, 48);
-    display.drawString(percentStr, BATTERY_X + CARD_PADDING, BATTERY_Y + CARD_VALUE_Y);
+    display.drawString(percentStr, BATTERY_X + CARD_PADDING, BATTERY_Y + 14);
 
-    // Voltage
     char voltStr[16];
     snprintf(voltStr, sizeof(voltStr), "%.2fV", voltage / 1000.0);
-    setRegularFont(display, 28);
-    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 80, BATTERY_Y + CARD_VALUE_Y + 15);
+    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 70, BATTERY_Y + 14);
 }
 
 void drawStatusInfo(M5EPD_Canvas& display) {

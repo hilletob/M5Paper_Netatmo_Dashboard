@@ -43,6 +43,9 @@ void setup() {
     ESP_LOGI("main", "=== ESP32 Weather Dashboard Starting ===");
     ESP_LOGI("main", "Build date: %s %s", __DATE__, __TIME__);
 
+    // Suppress noisy font_render debug messages (font_cache_init spam)
+    esp_log_level_set("font_render", ESP_LOG_WARN);
+
     // M5Paper hardware initialization
     M5.begin();
     M5.EPD.SetRotation(90);  // Portrait mode
@@ -288,12 +291,8 @@ bool fetchWeatherData(DashboardData& data) {
 void updateDisplay(const DashboardData& data) {
     ESP_LOGI("display", "Updating ePaper display");
 
-    // Hard-refresh every 10 wakes to clear ghosting artifacts (graue Linien)
-    uint8_t wakeCount = SleepManager::getWakeCount();
-    if (wakeCount % 10 == 0) {
-        ESP_LOGI("display", "Wake #%d: Performing hard-refresh (Clear) to remove ghosting", wakeCount);
-        M5.EPD.Clear(true);
-    }
+    // Hard-refresh on every wake to clear ghosting artifacts (graue Linien)
+    M5.EPD.Clear(true);
 
     // Clear canvas and draw dashboard
     canvas.fillCanvas(0);
