@@ -6,9 +6,9 @@
 #include <time.h>
 
 // Helper to draw a card background + border (clears previous ghosting)
-void drawCard(M5EPD_Canvas& display, int x, int y, int height) {
-    display.fillRect(x, y, CARD_WIDTH, height, 0);   // white background
-    display.drawRect(x, y, CARD_WIDTH, height, 15);  // border
+void drawCard(M5EPD_Canvas& display, int x, int y, int height, int width = CARD_WIDTH) {
+    display.fillRect(x, y, width, height, 0);   // white background
+    display.drawRect(x, y, width, height, 15);  // border
 }
 
 // Helper to format timestamp as time (HH:MM)
@@ -257,11 +257,11 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
         char timeStr[16];
         formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
         snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
-        setRegularFont(display, 24);
+        setRegularFont(display, 28);
         display.drawString(minStr, x, y);
 
         // Line 2: max
-        y += 34;
+        y += 38;
         char maxStr[32];
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
         snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
@@ -302,11 +302,11 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         char timeStr[16];
         formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
         snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
-        setRegularFont(display, 24);
+        setRegularFont(display, 28);
         display.drawString(minStr, x, y);
 
         // Line 2: max
-        y += 34;
+        y += 38;
         char maxStr[32];
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
         snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
@@ -336,7 +336,7 @@ void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
     // Climate status
     const char* status = getHumidityComfort(data.humidity);
     char detailStr[32];
-    snprintf(detailStr, sizeof(detailStr), "Raumklima: %s", status);
+    snprintf(detailStr, sizeof(detailStr), "Klima: %s", status);
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
     display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y);
@@ -389,18 +389,18 @@ void drawAirQualityWidget(M5EPD_Canvas& display, const IndoorData& data) {
     setRegularFont(display, 28);
     display.drawString("Luftqualität innen", AIR_QUALITY_X + CARD_PADDING, AIR_QUALITY_Y + CARD_LABEL_Y);
 
-    // Draw CO2 value (bold)
+    // Draw CO2 value (bold) then "ppm" inline
     char co2Str[16];
     snprintf(co2Str, sizeof(co2Str), "%d", data.co2);
     display.setTextDatum(TL_DATUM);
     setBoldFont(display, 48);
     int valueX = AIR_QUALITY_X + CARD_PADDING;
     int valueY = AIR_QUALITY_Y + CARD_VALUE_Y;
-    display.drawString(co2Str, valueX, valueY);
+    int textW = display.drawString(co2Str, valueX, valueY);
 
-    // Draw unit on next line
+    // Draw "ppm" in smaller font on the same line
     setRegularFont(display, 28);
-    display.drawString("ppm", valueX, valueY + 50);
+    display.drawString("ppm", valueX + textW + 6, valueY + 14);
 
     drawTrendArrow(display, AIR_QUALITY_X + CARD_TREND_X_OFFSET, AIR_QUALITY_Y + CARD_TREND_Y, data.co2Trend);
 }
@@ -415,36 +415,25 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     setRegularFont(display, 28);
     display.drawString("Luftdruck aussen", PRESSURE_X + CARD_PADDING, PRESSURE_Y + CARD_LABEL_Y);
 
-    // Draw pressure value (bold)
+    // Draw pressure value (bold) then "hPa" inline
     char pressStr[16];
     snprintf(pressStr, sizeof(pressStr), "%d", data.pressure);
     display.setTextDatum(TL_DATUM);
     setBoldFont(display, 48);
     int valueX = PRESSURE_X + CARD_PADDING;
     int valueY = PRESSURE_Y + CARD_VALUE_Y;
-    display.drawString(pressStr, valueX, valueY);
+    int textW = display.drawString(pressStr, valueX, valueY);
 
-    // Draw unit on next line
+    // Draw "hPa" in smaller font on the same line
     setRegularFont(display, 28);
-    display.drawString("hPa", valueX, valueY + 50);
+    display.drawString("hPa", valueX + textW + 6, valueY + 14);
 
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 }
 
-// Legacy forecast widgets (deprecated - now using 3-day forecast column)
-// Kept for backward compatibility but not used in 3-column layout
-void drawForecast3hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) {
-    // No longer used in 3-column layout
-}
-
-void drawForecast6hWidget(M5EPD_Canvas& display, const ForecastPoint& forecast) {
-    // No longer used in 3-column layout
-}
-
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
-    // Position: FORECAST_WIDGET_X, FORECAST_WIDGET_Y
-    // Size: CARD_WIDTH × FORECAST_CARD_HEIGHT (320px)
-    drawCard(display, FORECAST_WIDGET_X, FORECAST_WIDGET_Y, FORECAST_CARD_HEIGHT);
+    // Full-width forecast card
+    drawCard(display, FORECAST_WIDGET_X, FORECAST_WIDGET_Y, FORECAST_CARD_HEIGHT, FULL_CARD_WIDTH);
 
     display.setTextColor(15, 0);
 
@@ -459,140 +448,95 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
 
     const char* dayNames[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
 
-    // Draw 3 days in a vertical layout with larger icons
-    // Layout: Day [ICON 48px] Temp Precip
-    int dayHeight = 90;   // Increased height per row for 48px icons
-    int startY = FORECAST_WIDGET_Y + 48;  // After label
+    // Draw 3 days: each row has day, morning icon+temp, afternoon icon+temp, precip, range
+    int dayHeight = 80;
+    int startY = FORECAST_WIDGET_Y + 42;
+    int baseX = FORECAST_WIDGET_X;
 
     for (int day = 0; day < 3; day++) {
         const DailyForecast& df = forecast.days[day];
 
         int rowY = startY + (day * dayHeight);
-        int rowX = FORECAST_WIDGET_X + CARD_PADDING;
 
-        // Day label (Mo, Di, Mi, etc.) - vertically centered with icon
+        // Separator line between rows (not before first)
+        if (day > 0) {
+            display.drawFastHLine(baseX + 8, rowY - 4, FULL_CARD_WIDTH - 16, 8);  // light gray line
+        }
+
+        // Day label
         int dayOfWeek = (tm->tm_wday + day) % 7;
         setRegularFont(display, 28);
         display.setTextDatum(TL_DATUM);
-        display.drawString(dayNames[dayOfWeek], rowX, rowY + 12);
+        display.drawString(dayNames[dayOfWeek], baseX + FORECAST_DAY_COL_X, rowY + 20);
 
         if (!df.valid) {
-            display.drawString("--", rowX + 40, rowY + 12);
+            display.drawString("--", baseX + FORECAST_MORN_ICON_X, rowY + 20);
             continue;
         }
 
-        // Weather icon (48x48) - larger for better visibility
-        const char* icon = getIconFromCode(df.symbolCode);
-        drawWeatherIcon(display, rowX + 32, rowY - 2, icon, 48);
+        // Morning icon (36x36) from times[0] (hour=6), fallback to daily symbolCode
+        const char* mornIcon;
+        int8_t mornTemp;
+        if (df.times[0].hour != 0) {
+            mornIcon = getIconFromCode(df.times[0].symbolCode);
+            mornTemp = df.times[0].temperature;
+        } else {
+            mornIcon = getIconFromCode(df.symbolCode);
+            mornTemp = df.tempMin;
+        }
+        drawWeatherIcon(display, baseX + FORECAST_MORN_ICON_X, rowY + 4, mornIcon, 36);
 
-        // Temperature range: min/max°C
-        char tempStr[24];
-        snprintf(tempStr, sizeof(tempStr), "%d/%d°C", df.tempMin, df.tempMax);
+        // Morning temperature
+        char mornTempStr[10];
+        snprintf(mornTempStr, sizeof(mornTempStr), "%d°C", mornTemp);
         setBoldFont(display, 28);
         display.setTextDatum(TL_DATUM);
-        int tempX = rowX + 88;  // After 48px icon
-        display.drawString(tempStr, tempX, rowY + 8);
+        display.drawString(mornTempStr, baseX + FORECAST_MORN_TEMP_X, rowY + 20);
 
-        // Precipitation on same line (right side) or second line
+        // Afternoon icon (36x36) from times[1] (hour=12), fallback to daily symbolCode
+        const char* aftIcon;
+        int8_t aftTemp;
+        if (df.times[1].hour != 0) {
+            aftIcon = getIconFromCode(df.times[1].symbolCode);
+            aftTemp = df.times[1].temperature;
+        } else {
+            aftIcon = getIconFromCode(df.symbolCode);
+            aftTemp = df.tempMax;
+        }
+        drawWeatherIcon(display, baseX + FORECAST_AFT_ICON_X, rowY + 4, aftIcon, 36);
+
+        // Afternoon temperature
+        char aftTempStr[10];
+        snprintf(aftTempStr, sizeof(aftTempStr), "%d°C", aftTemp);
+        setBoldFont(display, 28);
+        display.setTextDatum(TL_DATUM);
+        display.drawString(aftTempStr, baseX + FORECAST_AFT_TEMP_X, rowY + 20);
+
+        // Precipitation total
         char precipStr[16];
         snprintf(precipStr, sizeof(precipStr), "%.1fmm", df.precipSum / 10.0);
         setRegularFont(display, 24);
         display.setTextDatum(TL_DATUM);
-        display.drawString(precipStr, tempX, rowY + 42);
+        display.drawString(precipStr, baseX + FORECAST_PRECIP_X, rowY + 22);
+
+        // Min/max temperature range
+        char rangeStr[16];
+        snprintf(rangeStr, sizeof(rangeStr), "%d/%d°C", df.tempMin, df.tempMax);
+        setRegularFont(display, 24);
+        display.setTextDatum(TL_DATUM);
+        display.drawString(rangeStr, baseX + FORECAST_RANGE_X, rowY + 22);
     }
-}
-
-// Helper: Draw 3-time grid (06h, 12h, 18h)
-void drawDayTimeGrid(M5EPD_Canvas& display, const DayTimeForecast times[3],
-                     int x, int y, int width) {
-    int cellWidth = width / 3;
-
-    for (int i = 0; i < 3; i++) {
-        int cellX = x + (i * cellWidth);
-        const DayTimeForecast& dt = times[i];
-        bool hasData = (dt.hour != 0);  // hour == 0 means no data
-
-        display.setTextDatum(TC_DATUM);
-
-        if (hasData) {
-            // Weather icon (24×24px)
-            const char* icon = getIconFromCode(dt.symbolCode);
-            drawWeatherIcon(display, cellX + cellWidth/2 - 12, y, icon, 24);
-
-            // Temperature as single string
-            char tempStr[10];
-            snprintf(tempStr, sizeof(tempStr), "%d°C", dt.temperature);
-            setBoldFont(display, 32);
-            display.drawString(tempStr, cellX + cellWidth/2, y + 27);
-
-            // Precipitation as single string
-            char precipStr[12];
-            snprintf(precipStr, sizeof(precipStr), "%.1fmm", dt.precipitationMm / 10.0);
-            setRegularFont(display, 24);
-            display.drawString(precipStr, cellX + cellWidth/2, y + 55);
-        } else {
-            // Show placeholder for missing data
-            setRegularFont(display, 28);
-            display.drawString("-", cellX + cellWidth/2, y + 15);
-        }
-    }
-}
-
-// Helper: Draw single daily forecast section
-void drawDailyForecastSection(M5EPD_Canvas& display, const DailyForecast& day,
-                               int x, int y, const char* dayLabel, bool isToday) {
-    // NOT USED on M5Paper (no forecast widgets in portrait layout)
-    (void)display;
-    (void)day;
-    (void)x;
-    (void)y;
-    (void)dayLabel;
-    (void)isToday;
-}
-
-// Main 3-day forecast column
-void draw3DayForecastColumn(M5EPD_Canvas& display, const ForecastData& forecast) {
-    // NOT USED on M5Paper (no forecast widgets in portrait layout)
-    (void)display;  // Suppress unused parameter warning
-    (void)forecast;
-}
-
-void drawStatusBar(M5EPD_Canvas& display) {
-    // Just draw separator line at bottom
-    display.drawFastHLine(0, STATUS_BAR_Y, SCREEN_WIDTH, 15);
-}
-
-void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
-    display.fillCanvas(0);  // White background (M5EPD uses fillCanvas, not fillScreen)
-
-    // Header
-    drawHeader(display, LOCATION_NAME, data.updateTime, data.nextWakeTime);
-
-    // COLUMN 1: INDOOR SENSORS
-    drawIndoorTempWidget(display, data.weather.indoor);
-    drawIndoorHumidWidget(display, data.weather.indoor);
-    drawAirQualityWidget(display, data.weather.indoor);
-    drawPressureWidget(display, data.weather.indoor);
-    drawStatusInfo(display);
-
-    // COLUMN 2: OUTDOOR + FORECAST + BATTERY
-    drawOutdoorTempWidget(display, data.weather.outdoor);
-    drawOutdoorHumidWidget(display, data.weather.outdoor);
-    drawForecastWidget(display, data.forecast);
-    drawBatteryWidget(display, data.batteryVoltage, data.batteryPercent);
-
-    // Status bar (separator line only)
-    drawStatusBar(display);
 }
 
 void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent) {
-    drawCard(display, BATTERY_X, BATTERY_Y, BATTERY_CARD_HEIGHT);
+    // Slim full-width battery bar
+    drawCard(display, BATTERY_X, BATTERY_Y, BATTERY_CARD_HEIGHT, FULL_CARD_WIDTH);
 
     display.setTextColor(15, 0);
 
-    // Battery icon (top right of card)
-    int iconX = BATTERY_X + CARD_WIDTH - 80;
-    int iconY = BATTERY_Y + 12;
+    // Battery icon (right side of card)
+    int iconX = BATTERY_X + FULL_CARD_WIDTH - 80;
+    int iconY = BATTERY_Y + 16;
     display.drawRect(iconX, iconY, 60, 24, 15);
     display.fillRect(iconX + 60, iconY + 6, 4, 12, 15);  // Nub
 
@@ -601,7 +545,7 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     uint8_t fillColor = (percent < 20) ? 12 : 15;  // Darker gray for low
     display.fillRect(iconX + 2, iconY + 2, fillW, 20, fillColor);
 
-    // Percentage and voltage on one line, same font size
+    // Percentage and voltage on one line
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
 
@@ -614,10 +558,29 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     display.drawString(voltStr, BATTERY_X + CARD_PADDING + 70, BATTERY_Y + 14);
 }
 
-void drawStatusInfo(M5EPD_Canvas& display) {
-    // Optional: Status/info card in column 1 bottom
-    // For now, leave empty (or draw a minimal card)
-    drawCard(display, STATUS_INFO_X, STATUS_INFO_Y, STATUS_INFO_HEIGHT);
+void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
+    display.fillCanvas(0);  // White background (M5EPD uses fillCanvas, not fillScreen)
+
+    // Header
+    drawHeader(display, LOCATION_NAME, data.updateTime, data.nextWakeTime);
+
+    // ROW 1: Temperature (col1=indoor, col2=outdoor)
+    drawIndoorTempWidget(display, data.weather.indoor);
+    drawOutdoorTempWidget(display, data.weather.outdoor);
+
+    // ROW 2: Humidity (col1=indoor, col2=outdoor)
+    drawIndoorHumidWidget(display, data.weather.indoor);
+    drawOutdoorHumidWidget(display, data.weather.outdoor);
+
+    // ROW 3: CO2 (col1) + Pressure (col2)
+    drawAirQualityWidget(display, data.weather.indoor);
+    drawPressureWidget(display, data.weather.indoor);
+
+    // ROW 4: Full-width forecast
+    drawForecastWidget(display, data.forecast);
+
+    // ROW 5: Full-width battery bar
+    drawBatteryWidget(display, data.batteryVoltage, data.batteryPercent);
 }
 
 // Legacy function names for compatibility

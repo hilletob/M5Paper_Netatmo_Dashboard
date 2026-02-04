@@ -18,9 +18,6 @@ void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data);
 
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast);
 void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent);
-void drawStatusInfo(M5EPD_Canvas& display);  // New: status/info card in col1 bottom
-
-void drawStatusBar(M5EPD_Canvas& display);
 
 // Header with update times
 void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime);
