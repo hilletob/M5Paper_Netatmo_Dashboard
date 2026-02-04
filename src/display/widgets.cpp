@@ -253,19 +253,28 @@ void drawIndoorTempWidget(M5EPD_Canvas& display, const IndoorData& data) {
         int x = INDOOR_TEMP_X + CARD_PADDING;
 
         // Line 1: min
-        char minStr[32];
+        char valStr[16];
         char timeStr[16];
-        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
-        snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
+        int w;
         setRegularFont(display, 28);
-        display.drawString(minStr, x, y);
+        w = display.drawString("min ", x, y);
+        snprintf(valStr, sizeof(valStr), "%.1f°C", data.minTemp);
+        setBoldFont(display, 28);
+        w += display.drawString(valStr, x + w, y);
+        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
+        setRegularFont(display, 28);
+        display.drawString(timeStr, x + w + 8, y);
 
         // Line 2: max
         y += 38;
-        char maxStr[32];
+        setRegularFont(display, 28);
+        w = display.drawString("max ", x, y);
+        snprintf(valStr, sizeof(valStr), "%.1f°C", data.maxTemp);
+        setBoldFont(display, 28);
+        w += display.drawString(valStr, x + w, y);
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
-        snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
-        display.drawString(maxStr, x, y);
+        setRegularFont(display, 28);
+        display.drawString(timeStr, x + w + 8, y);
     }
 }
 
@@ -298,19 +307,28 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data) {
         int x = OUTDOOR_TEMP_X + CARD_PADDING;
 
         // Line 1: min
-        char minStr[32];
+        char valStr[16];
         char timeStr[16];
-        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
-        snprintf(minStr, sizeof(minStr), "min %.1f°C  %s", data.minTemp, timeStr);
+        int w;
         setRegularFont(display, 28);
-        display.drawString(minStr, x, y);
+        w = display.drawString("min ", x, y);
+        snprintf(valStr, sizeof(valStr), "%.1f°C", data.minTemp);
+        setBoldFont(display, 28);
+        w += display.drawString(valStr, x + w, y);
+        formatTime(data.dateMinTemp, timeStr, sizeof(timeStr));
+        setRegularFont(display, 28);
+        display.drawString(timeStr, x + w + 8, y);
 
         // Line 2: max
         y += 38;
-        char maxStr[32];
+        setRegularFont(display, 28);
+        w = display.drawString("max ", x, y);
+        snprintf(valStr, sizeof(valStr), "%.1f°C", data.maxTemp);
+        setBoldFont(display, 28);
+        w += display.drawString(valStr, x + w, y);
         formatTime(data.dateMaxTemp, timeStr, sizeof(timeStr));
-        snprintf(maxStr, sizeof(maxStr), "max %.1f°C  %s", data.maxTemp, timeStr);
-        display.drawString(maxStr, x, y);
+        setRegularFont(display, 28);
+        display.drawString(timeStr, x + w + 8, y);
     }
 }
 
