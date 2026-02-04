@@ -146,8 +146,9 @@ struct DashboardData {
     uint32_t batteryVoltage;    // mV
     uint8_t batteryPercent;     // %
     unsigned long updateTime;   // Unix timestamp of dashboard update
+    unsigned long nextWakeTime; // Unix timestamp of next scheduled wake
 
-    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0) {}
+    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0), nextWakeTime(0) {}
 };
 
 // Helper function to convert trend string to enum

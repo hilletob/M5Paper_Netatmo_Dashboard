@@ -7,10 +7,14 @@
 
 class SleepManager {
 private:
-    // RTC persisted variables (survive deep sleep)
-    static RTC_DATA_ATTR time_t rtcEpoch;
-    static RTC_DATA_ATTR uint8_t wakeCount;
-    static RTC_DATA_ATTR bool lastUpdateSuccess;
+    // Persisted variables (stored in LittleFS)
+    static time_t rtcEpoch;
+    static uint8_t wakeCount;
+    static bool lastUpdateSuccess;
+
+    // Load/save state from/to LittleFS
+    static void loadState();
+    static void saveState();
 
 public:
     // Initialize sleep manager

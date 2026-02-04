@@ -22,6 +22,9 @@ void drawStatusInfo(M5EPD_Canvas& display);  // New: status/info card in col1 bo
 
 void drawStatusBar(M5EPD_Canvas& display);
 
+// Header with update times
+void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime);
+
 // Complete dashboard renderer
 void drawDashboard(M5EPD_Canvas& display, const DashboardData& data);
 

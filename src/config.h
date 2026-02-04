@@ -51,7 +51,10 @@
 
 // Update Configuration
 #ifndef UPDATE_INTERVAL_MIN
-#define UPDATE_INTERVAL_MIN 11  // Minutes after last Netatmo update
+#define UPDATE_INTERVAL_MIN 10  // Minutes after last Netatmo update
+#endif
+#ifndef RETRY_INTERVAL_MIN
+#define RETRY_INTERVAL_MIN 5  // Minutes for retry when data fetch fails
 #endif
 #ifndef MINIMUM_SLEEP_SEC
 #define MINIMUM_SLEEP_SEC 60  // Minimum 1 minute between updates

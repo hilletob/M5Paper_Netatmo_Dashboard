@@ -188,28 +188,39 @@ void drawWeatherIcon(M5EPD_Canvas& display, int x, int y, const char* iconName, 
     }
 }
 
-void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long timestamp) {
+void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime) {
     // Draw header background
     display.fillRect(0, HEADER_Y, SCREEN_WIDTH, HEADER_HEIGHT, 0);
     display.drawFastHLine(0, HEADER_HEIGHT, SCREEN_WIDTH, 15);
 
-    // Location on left
+    // Location on left (vertically centered)
     display.setTextColor(15, 0);
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
-    display.drawString(location, MARGIN, HEADER_Y + 15);  // Vertically centered
+    display.drawString(location, MARGIN, HEADER_Y + 12);
 
-    // Date/time on right (same size as location)
-    if (timestamp > 0) {
-        time_t t = timestamp;
+    // Right side: two lines with smaller font
+    setRegularFont(display, 22);
+    display.setTextDatum(TR_DATUM);
+
+    // Line 1: Last Netatmo update time
+    if (updateTime > 0) {
+        char updateStr[32];
+        time_t t = updateTime;
         struct tm* tm = localtime(&t);
-        char dateStr[32];
-        snprintf(dateStr, sizeof(dateStr), "%02d.%02d.%04d %02d:%02d",
-                tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900,
+        snprintf(updateStr, sizeof(updateStr), "Aktualisiert: %02d:%02d",
                 tm->tm_hour, tm->tm_min);
-        display.setTextDatum(TR_DATUM);
-        setRegularFont(display, 28);  // Match location font size
-        display.drawString(dateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 15);  // Vertically centered
+        display.drawString(updateStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 5);
+    }
+
+    // Line 2: Next scheduled wake time
+    if (nextWakeTime > 0) {
+        char nextStr[32];
+        time_t t = nextWakeTime;
+        struct tm* tm = localtime(&t);
+        snprintf(nextStr, sizeof(nextStr), "Nächstes Update: %02d:%02d",
+                tm->tm_hour, tm->tm_min);
+        display.drawString(nextStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 29);
     }
 }
 
@@ -477,10 +488,10 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         // Temperature range: min/max°C
         char tempStr[24];
         snprintf(tempStr, sizeof(tempStr), "%d/%d°C", df.tempMin, df.tempMax);
-        setBoldFont(display, 32);
+        setBoldFont(display, 28);
         display.setTextDatum(TL_DATUM);
         int tempX = rowX + 88;  // After 48px icon
-        display.drawString(tempStr, tempX, rowY + 4);
+        display.drawString(tempStr, tempX, rowY + 8);
 
         // Precipitation on same line (right side) or second line
         char precipStr[16];
@@ -555,7 +566,7 @@ void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
     display.fillCanvas(0);  // White background (M5EPD uses fillCanvas, not fillScreen)
 
     // Header
-    drawHeader(display, LOCATION_NAME, data.updateTime);
+    drawHeader(display, LOCATION_NAME, data.updateTime, data.nextWakeTime);
 
     // COLUMN 1: INDOOR SENSORS
     drawIndoorTempWidget(display, data.weather.indoor);

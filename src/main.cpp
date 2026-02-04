@@ -32,7 +32,8 @@ void disconnectWiFi();
 bool syncTime();
 bool fetchWeatherData(DashboardData& data);
 void updateDisplay(const DashboardData& data);
-void scheduleNextWake(unsigned long netatmoLastUpdate);
+unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate);
+void enterSleep(unsigned long nextWakeTime);
 
 void setup() {
     // Initialize serial for debugging
@@ -164,6 +165,9 @@ void setup() {
         ESP_LOGW("main", "Device may not wake up. Please charge battery.");
     }
 
+    // Calculate next wake time before display update (so header can show it)
+    dashboardData.nextWakeTime = calculateNextWakeTime(dashboardData.weather.timestamp);
+
     // Update display
     if (dataAvailable) {
         updateDisplay(dashboardData);
@@ -188,8 +192,8 @@ void setup() {
         M5.EPD.Sleep();
     }
 
-    // Schedule next wake and enter deep sleep (pass Netatmo timestamp for smart scheduling)
-    scheduleNextWake(dashboardData.weather.timestamp);
+    // Enter deep sleep until nextWakeTime
+    enterSleep(dashboardData.nextWakeTime);
 }
 
 void loop() {
@@ -284,6 +288,13 @@ bool fetchWeatherData(DashboardData& data) {
 void updateDisplay(const DashboardData& data) {
     ESP_LOGI("display", "Updating ePaper display");
 
+    // Hard-refresh every 10 wakes to clear ghosting artifacts (graue Linien)
+    uint8_t wakeCount = SleepManager::getWakeCount();
+    if (wakeCount % 10 == 0) {
+        ESP_LOGI("display", "Wake #%d: Performing hard-refresh (Clear) to remove ghosting", wakeCount);
+        M5.EPD.Clear(true);
+    }
+
     // Clear canvas and draw dashboard
     canvas.fillCanvas(0);
     drawDashboard(canvas, data);
@@ -299,33 +310,42 @@ void updateDisplay(const DashboardData& data) {
     M5.EPD.Sleep();
 }
 
-void scheduleNextWake(unsigned long netatmoLastUpdate) {
+unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate) {
     // Calculate next wake time based on Netatmo update cycle
-    // Netatmo updates every 10 minutes, we wake 11 minutes after last update
+    // Netatmo updates every 10 minutes, we wake UPDATE_INTERVAL_MIN after last update
 
     time_t now = SleepManager::getEpoch();
-    unsigned long sleepSeconds = UPDATE_INTERVAL_MIN * 60;  // Fallback: 11 minutes from now
-    bool usedNetatmoTimestamp = false;
+    time_t nextWake = 0;
 
-    // Try to use Netatmo's last update timestamp for smart scheduling
-    if (netatmoLastUpdate > 0) {
-        // Calculate when we should wake up (11 minutes after Netatmo's last update)
-        time_t nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60);
+    // Retry fallback: if no valid data, use shorter retry interval
+    if (netatmoLastUpdate == 0) {
+        ESP_LOGW("sleep", "No Netatmo timestamp available - using retry interval (%d min)", RETRY_INTERVAL_MIN);
+        nextWake = now + (RETRY_INTERVAL_MIN * 60);
+    } else {
+        // Calculate when we should wake up (UPDATE_INTERVAL_MIN after Netatmo's last update)
+        nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60);
 
-        // Only use this if it's in the future
         if (nextWake > now) {
-            sleepSeconds = nextWake - now;
-            usedNetatmoTimestamp = true;
             ESP_LOGI("sleep", "Last Netatmo update: %lu (UTC timestamp)", netatmoLastUpdate);
-            ESP_LOGI("sleep", "Current time: %lu (UTC)", now);
-            ESP_LOGI("sleep", "Next wake scheduled for: %lu (11 min after update)", nextWake);
+            ESP_LOGI("sleep", "Next wake scheduled for: %lu (%d min after update)", nextWake, UPDATE_INTERVAL_MIN);
         } else {
             ESP_LOGW("sleep", "Calculated wake time is in the past (next=%lu, now=%lu)", nextWake, now);
-            ESP_LOGI("sleep", "Using fallback: 11 minutes from now");
+            ESP_LOGI("sleep", "Using fallback: %d minutes from now", UPDATE_INTERVAL_MIN);
+            nextWake = now + (UPDATE_INTERVAL_MIN * 60);
         }
+    }
+
+    return nextWake;
+}
+
+void enterSleep(unsigned long nextWakeTime) {
+    time_t now = SleepManager::getEpoch();
+    unsigned long sleepSeconds = 0;
+
+    if (nextWakeTime > (unsigned long)now) {
+        sleepSeconds = nextWakeTime - now;
     } else {
-        ESP_LOGW("sleep", "No Netatmo timestamp available");
-        ESP_LOGI("sleep", "Using fallback: 11 minutes from now");
+        sleepSeconds = RETRY_INTERVAL_MIN * 60;
     }
 
     // Clamp sleep duration to safe limits
