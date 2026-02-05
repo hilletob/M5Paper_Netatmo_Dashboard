@@ -134,7 +134,7 @@ struct ForecastData {
     ForecastPoint current;      // Current conditions (for backward compatibility)
     ForecastPoint forecast3h;   // +3 hours (deprecated, kept for compatibility)
     ForecastPoint forecast6h;   // +6 hours (deprecated, kept for compatibility)
-    DailyForecast days[3];      // 3-day forecast from met.no
+    DailyForecast days[4];      // 4-day forecast from met.no
 
     ForecastData() {}
 };
@@ -147,8 +147,9 @@ struct DashboardData {
     uint8_t batteryPercent;     // %
     unsigned long updateTime;   // Unix timestamp of dashboard update
     unsigned long nextWakeTime; // Unix timestamp of next scheduled wake
+    bool isFallback;            // True if using fallback sleep interval
 
-    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0), nextWakeTime(0) {}
+    DashboardData() : batteryVoltage(0), batteryPercent(0), updateTime(0), nextWakeTime(0), isFallback(false) {}
 };
 
 // Helper function to convert trend string to enum

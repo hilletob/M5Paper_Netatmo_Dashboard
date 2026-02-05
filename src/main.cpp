@@ -19,6 +19,7 @@
 
 // Power management
 #include "power/sleep_manager.h"
+#include "power/battery.h"
 
 // Global objects
 M5EPD_Canvas canvas(&M5.EPD);
@@ -32,7 +33,7 @@ void disconnectWiFi();
 bool syncTime();
 bool fetchWeatherData(DashboardData& data);
 void updateDisplay(const DashboardData& data);
-unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate);
+unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate, bool& isFallback);
 void enterSleep(unsigned long nextWakeTime);
 
 void setup() {
@@ -151,25 +152,25 @@ void setup() {
         }
     }
 
-    // Read battery (M5Paper)
-    uint32_t batteryVoltage = M5.getBatteryVoltage();
-    uint8_t batteryPercent = map(batteryVoltage, 3200, 4350, 0, 100);
-    batteryPercent = constrain(batteryPercent, 0, 100);
+    // Read battery (M5Paper) with status mapping
+    BatteryStatus battery = evaluateBattery(M5.getBatteryVoltage());
 
-    dashboardData.batteryVoltage = batteryVoltage;
-    dashboardData.batteryPercent = batteryPercent;
+    dashboardData.batteryVoltage = battery.millivolts;
+    dashboardData.batteryPercent = battery.percent;
     dashboardData.updateTime = SleepManager::getEpoch();
 
-    ESP_LOGI("main", "Battery: %d mV (%d%%)", batteryVoltage, batteryPercent);
+    ESP_LOGI("main", "Battery: %d mV (%d%%, %s)%s", battery.millivolts,
+            battery.percent, battery.label,
+            battery.charging ? " [charging]" : (battery.externalPower ? " [usb]" : ""));
 
     // Check for critically low battery (below 3.3V)
-    if (batteryVoltage > 0 && batteryVoltage < 3300) {
+    if (battery.millivolts > 0 && battery.millivolts < 3300) {
         ESP_LOGW("main", "CRITICAL: Battery voltage too low for reliable deep sleep!");
         ESP_LOGW("main", "Device may not wake up. Please charge battery.");
     }
 
     // Calculate next wake time before display update (so header can show it)
-    dashboardData.nextWakeTime = calculateNextWakeTime(dashboardData.weather.timestamp);
+    dashboardData.nextWakeTime = calculateNextWakeTime(dashboardData.weather.timestamp, dashboardData.isFallback);
 
     // Update display
     if (dataAvailable) {
@@ -309,17 +310,19 @@ void updateDisplay(const DashboardData& data) {
     M5.EPD.Sleep();
 }
 
-unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate) {
+unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate, bool& isFallback) {
     // Calculate next wake time based on Netatmo update cycle
     // Netatmo updates every 10 minutes, we wake UPDATE_INTERVAL_MIN after last update
 
     time_t now = SleepManager::getEpoch();
     time_t nextWake = 0;
+    isFallback = false;
 
     // Retry fallback: if no valid data, use shorter retry interval
     if (netatmoLastUpdate == 0) {
         ESP_LOGW("sleep", "No Netatmo timestamp available - using retry interval (%d min)", RETRY_INTERVAL_MIN);
         nextWake = now + (RETRY_INTERVAL_MIN * 60);
+        isFallback = true;
     } else {
         // Calculate when we should wake up (UPDATE_INTERVAL_MIN after Netatmo's last update)
         nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60);
@@ -331,6 +334,7 @@ unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate) {
             ESP_LOGW("sleep", "Calculated wake time is in the past (next=%lu, now=%lu)", nextWake, now);
             ESP_LOGI("sleep", "Using fallback: %d minutes from now", UPDATE_INTERVAL_MIN);
             nextWake = now + (UPDATE_INTERVAL_MIN * 60);
+            isFallback = true;
         }
     }
 

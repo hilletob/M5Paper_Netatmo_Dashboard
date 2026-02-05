@@ -66,9 +66,9 @@ bool DataCache::save(const DashboardData& data) {
     f6h["precip"] = data.forecast.forecast6h.precipitation;
     f6h["valid"] = data.forecast.forecast6h.valid;
 
-    // 3-day forecast (met.no)
+    // 4-day forecast (met.no)
     JsonArray days = doc["days"].to<JsonArray>();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         JsonObject day = days.add<JsonObject>();
         day["date"] = data.forecast.days[i].date;
         day["tempMin"] = data.forecast.days[i].tempMin;
@@ -193,10 +193,10 @@ bool DataCache::load(DashboardData& data) {
     data.forecast.forecast6h.precipitation = f6h["precip"] | 0.0f;
     data.forecast.forecast6h.valid = f6h["valid"] | false;
 
-    // 3-day forecast (met.no)
+    // 4-day forecast (met.no)
     JsonArray days = doc["days"];
     if (days) {
-        for (int i = 0; i < 3 && i < days.size(); i++) {
+        for (int i = 0; i < 4 && i < days.size(); i++) {
             JsonObject day = days[i];
             data.forecast.days[i].date = day["date"] | 0;
             data.forecast.days[i].tempMin = day["tempMin"] | 0;

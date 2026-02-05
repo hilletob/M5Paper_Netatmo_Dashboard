@@ -28,7 +28,7 @@
 #define HUMID_CARD_HEIGHT 130       // Humidity cards
 #define AIR_QUALITY_CARD_HEIGHT 100 // CO2 card (inline "ppm" saves vertical space)
 #define PRESSURE_CARD_HEIGHT 100    // Pressure card (inline "hPa")
-#define FORECAST_CARD_HEIGHT 280    // 3-day forecast
+#define FORECAST_CARD_HEIGHT 390    // 4-day forecast (compressed to fit battery)
 #define BATTERY_CARD_HEIGHT 55      // Battery card (slim bar)
 
 // Row positions (calculated)
@@ -80,12 +80,15 @@
 #define BATTERY_Y ROW5_Y
 
 // Forecast internal layout constants
-#define FORECAST_DAY_COL_X 8         // Day name column offset
-#define FORECAST_MORN_ICON_X 50      // Morning icon column offset
-#define FORECAST_MORN_TEMP_X 92      // Morning temp column offset
-#define FORECAST_AFT_ICON_X 180      // Afternoon icon column offset
-#define FORECAST_AFT_TEMP_X 222      // Afternoon temp column offset
-#define FORECAST_PRECIP_X 330        // Precipitation column offset
-#define FORECAST_RANGE_X 430         // Temp range column offset
+#define FORECAST_DAY_COL_X 10        // Day name column offset
+#define FORECAST_ICON_SIZE 48        // Forecast icon size (bigger)
+#define FORECAST_SLOT1_X 80          // Morning (06:00)
+#define FORECAST_SLOT2_X 160         // Noon (12:00)
+#define FORECAST_SLOT3_X 240         // Evening (18:00)
+#define FORECAST_SLOT4_X 320         // Daily summary
+#define FORECAST_PRECIP_X 420        // Precipitation column offset
+#define FORECAST_RANGE_X 420         // Temp range column offset
+#define FORECAST_TODAY_ICON_X 60     // "Heute" icon position
+#define FORECAST_TODAY_TEXT_X 130    // "Heute" text block position
 
 #endif  // LAYOUT_H

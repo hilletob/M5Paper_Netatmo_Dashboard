@@ -3,6 +3,7 @@
 
 #include <M5EPD.h>
 #include "../data/weather_data.h"
+#include "../power/battery.h"
 
 // Weather icon renderer
 void drawWeatherIcon(M5EPD_Canvas& display, int x, int y, const char* iconName, int size = 40);
@@ -17,10 +18,10 @@ void drawOutdoorTempWidget(M5EPD_Canvas& display, const OutdoorData& data);
 void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data);
 
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast);
-void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent);
+void drawBatteryWidget(M5EPD_Canvas& display, const BatteryStatus& status);
 
 // Header with update times
-void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime);
+void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime, bool isFallback = false);
 
 // Complete dashboard renderer
 void drawDashboard(M5EPD_Canvas& display, const DashboardData& data);

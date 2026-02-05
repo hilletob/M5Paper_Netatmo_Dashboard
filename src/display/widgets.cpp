@@ -188,7 +188,7 @@ void drawWeatherIcon(M5EPD_Canvas& display, int x, int y, const char* iconName, 
     }
 }
 
-void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime) {
+void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updateTime, unsigned long nextWakeTime, bool isFallback) {
     // Draw header background
     display.fillRect(0, HEADER_Y, SCREEN_WIDTH, HEADER_HEIGHT, 0);
     display.drawFastHLine(0, HEADER_HEIGHT, SCREEN_WIDTH, 15);
@@ -215,11 +215,16 @@ void drawHeader(M5EPD_Canvas& display, const char* location, unsigned long updat
 
     // Line 2: Next scheduled wake time
     if (nextWakeTime > 0) {
-        char nextStr[32];
+        char nextStr[48];
         time_t t = nextWakeTime;
         struct tm* tm = localtime(&t);
-        snprintf(nextStr, sizeof(nextStr), "Nächstes: %02d:%02d",
-                tm->tm_hour, tm->tm_min);
+        if (isFallback) {
+            snprintf(nextStr, sizeof(nextStr), "Nächstes: %02d:%02d (Fallback)",
+                    tm->tm_hour, tm->tm_min);
+        } else {
+            snprintf(nextStr, sizeof(nextStr), "Nächstes: %02d:%02d",
+                    tm->tm_hour, tm->tm_min);
+        }
         display.drawString(nextStr, SCREEN_WIDTH - MARGIN, HEADER_Y + 28);
     }
 }
@@ -458,7 +463,7 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
     // Label
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
-    display.drawString("3-Tage Vorhersage", FORECAST_WIDGET_X + CARD_PADDING, FORECAST_WIDGET_Y + CARD_LABEL_Y);
+    display.drawString("Vorhersage", FORECAST_WIDGET_X + CARD_PADDING, FORECAST_WIDGET_Y + CARD_LABEL_Y);
 
     // Get day names
     time_t now = time(nullptr);
@@ -466,12 +471,16 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
 
     const char* dayNames[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
 
-    // Draw 3 days: each row has day, morning icon+temp, afternoon icon+temp, precip, range
-    int dayHeight = 80;
-    int startY = FORECAST_WIDGET_Y + 42;
     int baseX = FORECAST_WIDGET_X;
 
-    for (int day = 0; day < 3; day++) {
+    // Base timestamp for fallback day labels
+    time_t todayTs = forecast.days[0].date ? forecast.days[0].date : now;
+
+    // Draw 4 days (today + next 3)
+    int dayHeight = 84;
+    int startY = FORECAST_WIDGET_Y + 32;
+
+    for (int day = 0; day < 4; day++) {
         const DailyForecast& df = forecast.days[day];
 
         int rowY = startY + (day * dayHeight);
@@ -482,71 +491,86 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         }
 
         // Day label
-        int dayOfWeek = (tm->tm_wday + day) % 7;
-        setRegularFont(display, 28);
+        time_t rowTs = df.date ? df.date : (todayTs + day * 86400);
+        struct tm* rowTm = localtime(&rowTs);
+        int dayOfWeek = rowTm ? rowTm->tm_wday : ((tm->tm_wday + day) % 7);
+        setBoldFont(display, 28);
         display.setTextDatum(TL_DATUM);
-        display.drawString(dayNames[dayOfWeek], baseX + FORECAST_DAY_COL_X, rowY + 20);
+        display.drawString(dayNames[dayOfWeek], baseX + FORECAST_DAY_COL_X, rowY + 4);
 
         if (!df.valid) {
-            display.drawString("--", baseX + FORECAST_MORN_ICON_X, rowY + 20);
+            setRegularFont(display, 24);
+            display.drawString("--", baseX + FORECAST_SLOT1_X, rowY + 20);
             continue;
         }
 
-        // Morning icon (36x36) from times[0] (hour=6), fallback to daily symbolCode
-        const char* mornIcon;
-        int8_t mornTemp;
-        if (df.times[0].hour != 0) {
-            mornIcon = getIconFromCode(df.times[0].symbolCode);
-            mornTemp = df.times[0].temperature;
-        } else {
-            mornIcon = getIconFromCode(df.symbolCode);
-            mornTemp = df.tempMin;
-        }
-        drawWeatherIcon(display, baseX + FORECAST_MORN_ICON_X, rowY + 4, mornIcon, 36);
+        auto renderSlot = [&](int slotIdx, int xOffset, bool isNight) {
+            const DayTimeForecast* dtf = nullptr;
+            if (slotIdx < 3 && df.times[slotIdx].hour != 0) {
+                dtf = &df.times[slotIdx];
+            }
 
-        // Morning temperature
-        char mornTempStr[10];
-        snprintf(mornTempStr, sizeof(mornTempStr), "%d°C", mornTemp);
-        setBoldFont(display, 28);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(mornTempStr, baseX + FORECAST_MORN_TEMP_X, rowY + 20);
+            const char* iconName;
+            int8_t tempVal;
 
-        // Afternoon icon (36x36) from times[1] (hour=12), fallback to daily symbolCode
-        const char* aftIcon;
-        int8_t aftTemp;
-        if (df.times[1].hour != 0) {
-            aftIcon = getIconFromCode(df.times[1].symbolCode);
-            aftTemp = df.times[1].temperature;
-        } else {
-            aftIcon = getIconFromCode(df.symbolCode);
-            aftTemp = df.tempMax;
-        }
-        drawWeatherIcon(display, baseX + FORECAST_AFT_ICON_X, rowY + 4, aftIcon, 36);
+            if (isNight) {
+                const DayTimeForecast* night = nullptr;
+                if (df.times[2].hour != 0) {
+                    night = &df.times[2];
+                }
 
-        // Afternoon temperature
-        char aftTempStr[10];
-        snprintf(aftTempStr, sizeof(aftTempStr), "%d°C", aftTemp);
-        setBoldFont(display, 28);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(aftTempStr, baseX + FORECAST_AFT_TEMP_X, rowY + 20);
+                if (night) {
+                    iconName = getIconFromCode(night->symbolCode);
+                    tempVal = night->temperature;
+                } else {
+                    iconName = getIconFromCode(df.symbolCode);
+                    tempVal = df.tempMin;
+                }
+            } else if (dtf) {
+                iconName = getIconFromCode(dtf->symbolCode);
+                tempVal = dtf->temperature;
+            } else {
+                iconName = getIconFromCode(df.symbolCode);
+                if (slotIdx == 0) {
+                    tempVal = df.tempMin;
+                } else if (slotIdx == 2) {
+                    tempVal = df.tempMax;
+                } else {
+                    tempVal = (int8_t)((df.tempMin + df.tempMax) / 2);
+                }
+            }
+
+            int iconX = baseX + xOffset;
+            int iconY = rowY + 12;
+            drawWeatherIcon(display, iconX, iconY, iconName, FORECAST_ICON_SIZE);
+
+            char tempStr[12];
+            snprintf(tempStr, sizeof(tempStr), "%d°C", tempVal);
+            setBoldFont(display, 24);
+            display.setTextDatum(TC_DATUM);
+            display.drawString(tempStr, iconX + FORECAST_ICON_SIZE / 2, iconY + FORECAST_ICON_SIZE - 2);
+        };
+
+        renderSlot(0, FORECAST_SLOT1_X, false);
+        renderSlot(1, FORECAST_SLOT2_X, false);
+        renderSlot(2, FORECAST_SLOT3_X, false);
+        renderSlot(3, FORECAST_SLOT4_X, true);
 
         // Precipitation total
         char precipStr[16];
         snprintf(precipStr, sizeof(precipStr), "%.1fmm", df.precipSum / 10.0);
         setRegularFont(display, 24);
         display.setTextDatum(TL_DATUM);
-        display.drawString(precipStr, baseX + FORECAST_PRECIP_X, rowY + 22);
+        display.drawString(precipStr, baseX + FORECAST_PRECIP_X, rowY + 18);
 
         // Min/max temperature range
         char rangeStr[16];
         snprintf(rangeStr, sizeof(rangeStr), "%d/%d°C", df.tempMin, df.tempMax);
-        setRegularFont(display, 24);
-        display.setTextDatum(TL_DATUM);
-        display.drawString(rangeStr, baseX + FORECAST_RANGE_X, rowY + 22);
+        display.drawString(rangeStr, baseX + FORECAST_RANGE_X, rowY + 46);
     }
 }
 
-void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent) {
+void drawBatteryWidget(M5EPD_Canvas& display, const BatteryStatus& status) {
     // Slim full-width battery bar
     drawCard(display, BATTERY_X, BATTERY_Y, BATTERY_CARD_HEIGHT, FULL_CARD_WIDTH);
 
@@ -559,28 +583,34 @@ void drawBatteryWidget(M5EPD_Canvas& display, uint32_t voltage, uint8_t percent)
     display.fillRect(iconX + 60, iconY + 6, 4, 12, 15);  // Nub
 
     // Fill based on percentage (grayscale for low battery)
-    int fillW = (56) * percent / 100;
-    uint8_t fillColor = (percent < 20) ? 12 : 15;  // Darker gray for low
+    int fillW = (56) * status.percent / 100;
+    uint8_t fillColor = (status.percent < 20) ? 12 : 15;  // Darker gray for low
     display.fillRect(iconX + 2, iconY + 2, fillW, 20, fillColor);
 
     // Percentage and voltage on one line
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
 
-    char percentStr[8];
-    snprintf(percentStr, sizeof(percentStr), "%d%%", percent);
-    display.drawString(percentStr, BATTERY_X + CARD_PADDING, BATTERY_Y + 14);
+    char statusStr[24];
+    snprintf(statusStr, sizeof(statusStr), "%d%% %s", status.percent, status.label);
+    display.drawString(statusStr, BATTERY_X + CARD_PADDING, BATTERY_Y + 12);
 
     char voltStr[16];
-    snprintf(voltStr, sizeof(voltStr), "%.2fV", voltage / 1000.0);
-    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 70, BATTERY_Y + 14);
+    snprintf(voltStr, sizeof(voltStr), "%.2fV", status.millivolts / 1000.0);
+    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 200, BATTERY_Y + 12);
+
+    if (status.charging || status.externalPower) {
+        setRegularFont(display, 24);
+        const char* plug = status.charging ? "Laden" : "Netz";
+        display.drawString(plug, BATTERY_X + CARD_PADDING + 330, BATTERY_Y + 14);
+    }
 }
 
 void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
     display.fillCanvas(0);  // White background (M5EPD uses fillCanvas, not fillScreen)
 
     // Header
-    drawHeader(display, LOCATION_NAME, data.updateTime, data.nextWakeTime);
+    drawHeader(display, LOCATION_NAME, data.updateTime, data.nextWakeTime, data.isFallback);
 
     // ROW 1: Temperature (col1=indoor, col2=outdoor)
     drawIndoorTempWidget(display, data.weather.indoor);
@@ -598,7 +628,7 @@ void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
     drawForecastWidget(display, data.forecast);
 
     // ROW 5: Full-width battery bar
-    drawBatteryWidget(display, data.batteryVoltage, data.batteryPercent);
+    drawBatteryWidget(display, evaluateBattery(data.batteryVoltage));
 }
 
 // Legacy function names for compatibility

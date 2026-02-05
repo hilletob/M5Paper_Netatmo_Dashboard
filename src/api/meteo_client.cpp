@@ -234,8 +234,8 @@ bool MeteoClient::getForecast(ForecastData& data) {
     todayMidnight.tm_sec = 0;
     time_t todayStart = mktime(&todayMidnight);
 
-    // 9. Aggregate 3 days of forecast data
-    for (int day = 0; day < 3; day++) {
+    // 9. Aggregate 4 days of forecast data
+    for (int day = 0; day < 4; day++) {
         time_t dayStart = todayStart + (day * 86400);  // Midnight of day
         time_t dayEnd = dayStart + 86400;              // Midnight of next day
 
