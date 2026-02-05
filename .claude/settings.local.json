@@ -18,7 +18,11 @@
       "Bash(wget:*)",
       "Bash(curl:*)",
       "Bash(unzip:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "WebFetch(domain:opendatadocs.meteoswiss.ch)",
+      "WebFetch(domain:data.geo.admin.ch)",
+      "WebFetch(domain:www.meteoswiss.admin.ch)",
+      "WebFetch(domain:docs.discover.swiss)"
     ]
   }
 }

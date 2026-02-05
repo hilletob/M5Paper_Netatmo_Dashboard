@@ -13,5 +13,6 @@
 #define FONT_SIZE_SMALL  24
 #define FONT_SIZE_MEDIUM 28
 #define FONT_SIZE_LARGE  48
+#define FONT_SIZE_XLARGE 64
 
 #endif  // FONTS_H

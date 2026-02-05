@@ -324,16 +324,27 @@ unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate, bool& isFal
         nextWake = now + (RETRY_INTERVAL_MIN * 60);
         isFallback = true;
     } else {
-        // Calculate when we should wake up (UPDATE_INTERVAL_MIN after Netatmo's last update)
-        nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60);
+        // Calculate when we should wake up (UPDATE_INTERVAL_MIN + buffer after Netatmo's last update)
+        nextWake = netatmoLastUpdate + (UPDATE_INTERVAL_MIN * 60) + UPDATE_BUFFER_SEC;
 
         if (nextWake > now) {
             ESP_LOGI("sleep", "Last Netatmo update: %lu (UTC timestamp)", netatmoLastUpdate);
-            ESP_LOGI("sleep", "Next wake scheduled for: %lu (%d min after update)", nextWake, UPDATE_INTERVAL_MIN);
+            ESP_LOGI("sleep", "Next wake scheduled for: %lu (%d min + %d sec buffer after update)",
+                    nextWake, UPDATE_INTERVAL_MIN, UPDATE_BUFFER_SEC);
         } else {
-            ESP_LOGW("sleep", "Calculated wake time is in the past (next=%lu, now=%lu)", nextWake, now);
-            ESP_LOGI("sleep", "Using fallback: %d minutes from now", UPDATE_INTERVAL_MIN);
-            nextWake = now + (UPDATE_INTERVAL_MIN * 60);
+            // Wake time is in the past — use two-tier handling
+            long overdueSeconds = now - nextWake;
+            if (overdueSeconds < STALE_THRESHOLD_SEC) {
+                // Slightly overdue: new data is likely imminent, short retry
+                ESP_LOGW("sleep", "Data slightly overdue (%ld sec past), short retry (%d sec)",
+                        overdueSeconds, UPDATE_BUFFER_SEC);
+                nextWake = now + UPDATE_BUFFER_SEC;
+            } else {
+                // Significantly overdue: full retry interval
+                ESP_LOGW("sleep", "Data significantly overdue (%ld sec past), full retry (%d min)",
+                        overdueSeconds, RETRY_INTERVAL_MIN);
+                nextWake = now + (RETRY_INTERVAL_MIN * 60);
+            }
             isFallback = true;
         }
     }

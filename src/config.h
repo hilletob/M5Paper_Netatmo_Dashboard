@@ -56,8 +56,14 @@
 #ifndef RETRY_INTERVAL_MIN
 #define RETRY_INTERVAL_MIN 5  // Minutes for retry when data fetch fails
 #endif
+#ifndef UPDATE_BUFFER_SEC
+#define UPDATE_BUFFER_SEC 60  // Buffer for Netatmo measurement jitter
+#endif
+#ifndef STALE_THRESHOLD_SEC
+#define STALE_THRESHOLD_SEC 180  // Boundary between "slightly late" and "significantly late"
+#endif
 #ifndef MINIMUM_SLEEP_SEC
-#define MINIMUM_SLEEP_SEC 60  // Minimum 1 minute between updates
+#define MINIMUM_SLEEP_SEC 120  // Minimum 2 minutes between updates
 #endif
 #ifndef MAXIMUM_SLEEP_SEC
 #define MAXIMUM_SLEEP_SEC 900  // Maximum 15 minutes between updates

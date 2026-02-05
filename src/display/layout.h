@@ -24,10 +24,10 @@
 // Math check: 6 + 261 + 6 + 261 + 6 = 540 ✓
 
 // Card heights - BALANCED for readability
-#define TEMP_CARD_HEIGHT 200        // Temperature cards – more vertical room for min/max
+#define TEMP_CARD_HEIGHT 186        // Temperature cards – more vertical room for min/max
 #define HUMID_CARD_HEIGHT 130       // Humidity cards
-#define AIR_QUALITY_CARD_HEIGHT 100 // CO2 card (inline "ppm" saves vertical space)
-#define PRESSURE_CARD_HEIGHT 100    // Pressure card (inline "hPa")
+#define AIR_QUALITY_CARD_HEIGHT 114 // CO2 card (inline "ppm" saves vertical space)
+#define PRESSURE_CARD_HEIGHT 114    // Pressure card (inline "hPa")
 #define FORECAST_CARD_HEIGHT 390    // 4-day forecast (compressed to fit battery)
 #define BATTERY_CARD_HEIGHT 55      // Battery card (slim bar)
 
@@ -39,7 +39,7 @@
 #define ROW5_Y (ROW4_Y + FORECAST_CARD_HEIGHT + CARD_SPACING)       // 795
 
 // Card internal layout - BALANCED spacing
-#define CARD_PADDING 8           // Moderate padding
+#define CARD_PADDING 12          // Padding from card border
 #define CARD_LABEL_Y 6           // Label position from card top
 #define CARD_VALUE_Y 36          // Value position
 #define CARD_TREND_X_OFFSET 210  // Trend icon X offset

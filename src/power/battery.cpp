@@ -6,12 +6,18 @@ static uint8_t mapRange(uint32_t value, uint32_t inMin, uint32_t inMax, uint8_t 
 }
 
 static uint8_t estimatePercent(uint32_t millivolts) {
-    if (millivolts >= 3900) return 100;                     // Resting full voltage after unplugging
-    if (millivolts >= 3800) return mapRange(millivolts, 3800, 3900, 70, 99);
-    if (millivolts >= 3700) return mapRange(millivolts, 3700, 3800, 50, 70);
-    if (millivolts >= 3600) return mapRange(millivolts, 3600, 3700, 30, 50);
-    if (millivolts >= 3500) return mapRange(millivolts, 3500, 3600, 15, 30);
-    if (millivolts >= 3300) return mapRange(millivolts, 3300, 3500, 5, 15);
+    if (millivolts >= 3950) return 100;
+    if (millivolts >= 3900) return 99;
+    if (millivolts >= 3850) return mapRange(millivolts, 3850, 3900, 90, 99);
+    if (millivolts >= 3800) return mapRange(millivolts, 3800, 3850, 80, 90);
+    if (millivolts >= 3750) return mapRange(millivolts, 3750, 3800, 70, 80);
+    if (millivolts >= 3700) return mapRange(millivolts, 3700, 3750, 60, 70);
+    if (millivolts >= 3660) return mapRange(millivolts, 3660, 3700, 50, 60);
+    if (millivolts >= 3620) return mapRange(millivolts, 3620, 3660, 40, 50);
+    if (millivolts >= 3580) return mapRange(millivolts, 3580, 3620, 30, 40);
+    if (millivolts >= 3500) return mapRange(millivolts, 3500, 3580, 20, 30);
+    if (millivolts >= 3400) return mapRange(millivolts, 3400, 3500, 10, 20);
+    if (millivolts >= 3300) return mapRange(millivolts, 3300, 3400, 0, 10);
     return 0;
 }
 
