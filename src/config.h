@@ -50,23 +50,20 @@
 #endif
 
 // Update Configuration
-#ifndef UPDATE_INTERVAL_MIN
-#define UPDATE_INTERVAL_MIN 10  // Minutes after last Netatmo update
+#ifndef UPDATE_INTERVAL_SEC
+#define UPDATE_INTERVAL_SEC 660  // 11 minutes: Netatmo updates every ~10 min + 1 min buffer
 #endif
-#ifndef RETRY_INTERVAL_MIN
-#define RETRY_INTERVAL_MIN 5  // Minutes for retry when data fetch fails
-#endif
-#ifndef UPDATE_BUFFER_SEC
-#define UPDATE_BUFFER_SEC 60  // Buffer for Netatmo measurement jitter
-#endif
-#ifndef STALE_THRESHOLD_SEC
-#define STALE_THRESHOLD_SEC 180  // Boundary between "slightly late" and "significantly late"
+#ifndef FALLBACK_SLEEP_SEC
+#define FALLBACK_SLEEP_SEC 660  // Sleep duration when no Netatmo timestamp available
 #endif
 #ifndef MINIMUM_SLEEP_SEC
 #define MINIMUM_SLEEP_SEC 120  // Minimum 2 minutes between updates
 #endif
 #ifndef MAXIMUM_SLEEP_SEC
 #define MAXIMUM_SLEEP_SEC 900  // Maximum 15 minutes between updates
+#endif
+#ifndef RTC_ALARM_THRESHOLD_SEC
+#define RTC_ALARM_THRESHOLD_SEC 255  // Above this, use RTC alarm instead of duration-based wake
 #endif
 
 // Hardware Configuration
