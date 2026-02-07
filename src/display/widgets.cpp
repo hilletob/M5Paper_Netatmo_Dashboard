@@ -476,16 +476,30 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 }
 
+// Helper to draw a small up or down triangle arrow (5px)
+static void drawSmallArrow(M5EPD_Canvas& display, int x, int y, bool isUp) {
+    if (isUp) {
+        display.fillTriangle(x, y + 5, x + 5, y, x + 10, y + 5, 15);
+    } else {
+        display.fillTriangle(x, y, x + 5, y + 5, x + 10, y, 15);
+    }
+}
+
 void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
     // Full-width forecast card
     drawCard(display, FORECAST_WIDGET_X, FORECAST_WIDGET_Y, FORECAST_CARD_HEIGHT, FULL_CARD_WIDTH);
 
     display.setTextColor(15, 0);
 
-    // Label
-    display.setTextDatum(TL_DATUM);
-    setRegularFont(display, 28);
-    display.drawString("Vorhersage", FORECAST_WIDGET_X + CARD_PADDING, FORECAST_WIDGET_Y + CARD_LABEL_Y);
+    // Time slot column headers (replacing "Vorhersage" label)
+    setRegularFont(display, 24);
+    display.setTextDatum(TC_DATUM);
+    int baseX = FORECAST_WIDGET_X;
+    const char* slotHeaders[] = {"06", "12", "18", "00"};
+    const int slotXOffsets[] = {FORECAST_SLOT1_X, FORECAST_SLOT2_X, FORECAST_SLOT3_X, FORECAST_SLOT4_X};
+    for (int i = 0; i < 4; i++) {
+        display.drawString(slotHeaders[i], baseX + slotXOffsets[i] + FORECAST_ICON_SIZE / 2, FORECAST_WIDGET_Y + CARD_LABEL_Y);
+    }
 
     // Get day names
     time_t now = time(nullptr);
@@ -493,22 +507,62 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
 
     const char* dayNames[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
 
-    int baseX = FORECAST_WIDGET_X;
-
     // Base timestamp for fallback day labels
     time_t todayTs = forecast.days[0].date ? forecast.days[0].date : now;
 
-    // Draw 4 days (today + next 3)
+    // Determine current hour for skipping past slots
+    int currentHour = tm->tm_hour;
+
+    // Get today's midnight for date comparison
+    struct tm todayMidnight = *tm;
+    todayMidnight.tm_hour = 0;
+    todayMidnight.tm_min = 0;
+    todayMidnight.tm_sec = 0;
+    time_t todayMidnightTs = mktime(&todayMidnight);
+
+    // Draw up to 4 rows (skip today if all slots are past)
     int dayHeight = 84;
     int startY = FORECAST_WIDGET_Y + 32;
+    int rowIndex = 0;
 
-    for (int day = 0; day < 4; day++) {
+    for (int day = 0; day < 4 && rowIndex < 4; day++) {
         const DailyForecast& df = forecast.days[day];
 
-        int rowY = startY + (day * dayHeight);
+        // Check if this day is today
+        bool isToday = false;
+        if (df.date) {
+            struct tm* dayTm = localtime((time_t*)&df.date);
+            struct tm dayMidnight = *dayTm;
+            dayMidnight.tm_hour = 0;
+            dayMidnight.tm_min = 0;
+            dayMidnight.tm_sec = 0;
+            time_t dayMidnightTs = mktime(&dayMidnight);
+            isToday = (dayMidnightTs == todayMidnightTs);
+        }
+
+        // For today, determine which slots are still in the future
+        const int slotHours[] = {6, 12, 18, 21};  // 21 = night cutoff
+        bool slotVisible[4] = {true, true, true, true};
+
+        if (isToday) {
+            for (int s = 0; s < 3; s++) {
+                if (currentHour >= slotHours[s]) slotVisible[s] = false;
+            }
+            if (currentHour >= 21) slotVisible[3] = false;
+
+            // If all slots are past, skip this row entirely
+            bool anyVisible = false;
+            for (int s = 0; s < 4; s++) {
+                if (slotVisible[s]) { anyVisible = true; break; }
+            }
+            if (!anyVisible) continue;
+        }
+
+        int rowY = startY + (rowIndex * dayHeight);
+        rowIndex++;
 
         // Separator line between rows (not before first)
-        if (day > 0) {
+        if (rowIndex > 1) {
             display.drawFastHLine(baseX + 8, rowY - 4, FULL_CARD_WIDTH - 16, 8);  // light gray line
         }
 
@@ -527,6 +581,9 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         }
 
         auto renderSlot = [&](int slotIdx, int xOffset, bool isNight) {
+            // Skip past slots for today
+            if (isToday && !slotVisible[slotIdx]) return;
+
             const DayTimeForecast* dtf = nullptr;
             if (slotIdx < 3 && df.times[slotIdx].hour != 0) {
                 dtf = &df.times[slotIdx];
@@ -585,10 +642,23 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         display.setTextDatum(TL_DATUM);
         display.drawString(precipStr, baseX + FORECAST_PRECIP_X, rowY + 18);
 
-        // Min/max temperature range
-        char rangeStr[16];
-        snprintf(rangeStr, sizeof(rangeStr), "%d/%d°C", df.tempMin, df.tempMax);
-        display.drawString(rangeStr, baseX + FORECAST_RANGE_X, rowY + 46);
+        // Min/max temperature range with arrow triangles
+        int rangeX = baseX + FORECAST_RANGE_X;
+        int rangeY = rowY + 46;
+        char minStr[8], maxStr[8];
+        snprintf(minStr, sizeof(minStr), "%d", df.tempMin);
+        snprintf(maxStr, sizeof(maxStr), "%d", df.tempMax);
+
+        // Down arrow (min)
+        drawSmallArrow(display, rangeX + 3, rangeY + 6, false);
+        setRegularFont(display, 24);
+        display.setTextDatum(TL_DATUM);
+        int w = display.drawString(minStr, rangeX + 10, rangeY);
+        // Up arrow (max)
+        drawSmallArrow(display, rangeX + 10 + w + 5, rangeY + 2, true);
+        char maxUnit[12];
+        snprintf(maxUnit, sizeof(maxUnit), "%s°C", maxStr);
+        display.drawString(maxUnit, rangeX + 10 + w + 14, rangeY);
     }
 }
 
