@@ -668,9 +668,9 @@ void drawBatteryWidget(M5EPD_Canvas& display, const BatteryStatus& status) {
 
     display.setTextColor(15, 0);
 
-    // Battery icon (right side of card)
-    int iconX = BATTERY_X + FULL_CARD_WIDTH - 80;
-    int iconY = BATTERY_Y + 16;
+    // Battery icon (left side of card)
+    int iconX = BATTERY_X + CARD_PADDING;
+    int iconY = BATTERY_Y + 13;
     display.drawRect(iconX, iconY, 60, 24, 15);
     display.fillRect(iconX + 60, iconY + 6, 4, 12, 15);  // Nub
 
@@ -679,23 +679,19 @@ void drawBatteryWidget(M5EPD_Canvas& display, const BatteryStatus& status) {
     uint8_t fillColor = (status.percent < 20) ? 12 : 15;  // Darker gray for low
     display.fillRect(iconX + 2, iconY + 2, fillW, 20, fillColor);
 
-    // Percentage and voltage on one line
+    // Text elements left-to-right: Percentage → Voltage → State
     display.setTextDatum(TL_DATUM);
     setRegularFont(display, 28);
 
-    char statusStr[24];
-    snprintf(statusStr, sizeof(statusStr), "%d%% %s", status.percent, status.label);
-    display.drawString(statusStr, BATTERY_X + CARD_PADDING, BATTERY_Y + 12);
+    char percentStr[8];
+    snprintf(percentStr, sizeof(percentStr), "%d%%", status.percent);
+    display.drawString(percentStr, BATTERY_X + 90, BATTERY_Y + 12);
 
     char voltStr[16];
     snprintf(voltStr, sizeof(voltStr), "%.2fV", status.millivolts / 1000.0);
-    display.drawString(voltStr, BATTERY_X + CARD_PADDING + 200, BATTERY_Y + 12);
+    display.drawString(voltStr, BATTERY_X + 200, BATTERY_Y + 12);
 
-    if (status.charging || status.externalPower) {
-        setRegularFont(display, 24);
-        const char* plug = status.charging ? "Laden" : "Netz";
-        display.drawString(plug, BATTERY_X + CARD_PADDING + 330, BATTERY_Y + 14);
-    }
+    display.drawString(status.label, BATTERY_X + 340, BATTERY_Y + 12);
 }
 
 void drawDashboard(M5EPD_Canvas& display, const DashboardData& data) {
