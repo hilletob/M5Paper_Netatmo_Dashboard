@@ -27,44 +27,50 @@ void formatTime(unsigned long timestamp, char* buffer, size_t bufferSize) {
 
 // Helper to draw trend arrow using geometric shapes
 void drawTrendArrow(M5EPD_Canvas& display, int x, int y, Trend trend) {
-    int cx = x + 12;  // Center X
-    int cy = y + 12;  // Center Y
+    int cx = x + 16;  // Center X
+    int cy = y + 16;  // Center Y
 
     switch (trend) {
         case Trend::UP:
             // Diagonal arrow pointing up-right (↗)
-            // Shaft
-            display.drawLine(cx - 6, cy + 6, cx + 6, cy - 6, 15);
-            display.drawLine(cx - 5, cy + 6, cx + 6, cy - 5, 15);
-            display.drawLine(cx - 6, cy + 5, cx + 5, cy - 6, 15);
+            // Shaft (3px thick)
+            display.drawLine(cx - 10, cy + 10, cx + 10, cy - 10, 15);
+            display.drawLine(cx - 9, cy + 10, cx + 10, cy - 9, 15);
+            display.drawLine(cx - 10, cy + 9, cx + 9, cy - 10, 15);
+            display.drawLine(cx - 8, cy + 10, cx + 10, cy - 8, 15);
+            display.drawLine(cx - 10, cy + 8, cx + 8, cy - 10, 15);
             // Arrowhead
-            display.fillTriangle(cx + 6, cy - 6,
-                                cx + 6, cy - 2,
-                                cx + 2, cy - 6, 15);
+            display.fillTriangle(cx + 10, cy - 10,
+                                cx + 10, cy - 3,
+                                cx + 3, cy - 10, 15);
             break;
 
         case Trend::DOWN:
             // Diagonal arrow pointing down-right (↘)
-            // Shaft
-            display.drawLine(cx - 6, cy - 6, cx + 6, cy + 6, 15);
-            display.drawLine(cx - 5, cy - 6, cx + 6, cy + 5, 15);
-            display.drawLine(cx - 6, cy - 5, cx + 5, cy + 6, 15);
+            // Shaft (3px thick)
+            display.drawLine(cx - 10, cy - 10, cx + 10, cy + 10, 15);
+            display.drawLine(cx - 9, cy - 10, cx + 10, cy + 9, 15);
+            display.drawLine(cx - 10, cy - 9, cx + 9, cy + 10, 15);
+            display.drawLine(cx - 8, cy - 10, cx + 10, cy + 8, 15);
+            display.drawLine(cx - 10, cy - 8, cx + 8, cy + 10, 15);
             // Arrowhead
-            display.fillTriangle(cx + 6, cy + 6,
-                                cx + 6, cy + 2,
-                                cx + 2, cy + 6, 15);
+            display.fillTriangle(cx + 10, cy + 10,
+                                cx + 10, cy + 3,
+                                cx + 3, cy + 10, 15);
             break;
 
         case Trend::STABLE:
             // Horizontal arrow pointing right (→)
-            // Shaft
-            display.drawLine(cx - 8, cy, cx + 6, cy, 15);
-            display.drawLine(cx - 8, cy - 1, cx + 6, cy - 1, 15);
-            display.drawLine(cx - 8, cy + 1, cx + 6, cy + 1, 15);
+            // Shaft (3px thick)
+            display.drawLine(cx - 12, cy, cx + 8, cy, 15);
+            display.drawLine(cx - 12, cy - 1, cx + 8, cy - 1, 15);
+            display.drawLine(cx - 12, cy + 1, cx + 8, cy + 1, 15);
+            display.drawLine(cx - 12, cy - 2, cx + 8, cy - 2, 15);
+            display.drawLine(cx - 12, cy + 2, cx + 8, cy + 2, 15);
             // Arrowhead
-            display.fillTriangle(cx + 6, cy,
-                                cx + 2, cy - 4,
-                                cx + 2, cy + 4, 15);
+            display.fillTriangle(cx + 10, cy,
+                                cx + 3, cy - 6,
+                                cx + 3, cy + 6, 15);
             break;
 
         default:
@@ -370,13 +376,15 @@ void drawIndoorHumidWidget(M5EPD_Canvas& display, const IndoorData& data) {
     setRegularFont(display, 28);
     display.drawString("%", valueX + textW + 6, valueY + 26);
 
-    // Climate status
+    // Climate status: label regular, value bold
     const char* status = getHumidityComfort(data.humidity);
-    char detailStr[32];
-    snprintf(detailStr, sizeof(detailStr), "Klima: %s", status);
     display.setTextDatum(TL_DATUM);
+    int detailX = INDOOR_HUMID_X + CARD_PADDING;
+    int detailY = INDOOR_HUMID_Y + CARD_DETAIL_Y;
     setRegularFont(display, 28);
-    display.drawString(detailStr, INDOOR_HUMID_X + CARD_PADDING, INDOOR_HUMID_Y + CARD_DETAIL_Y);
+    int labelW = display.drawString("Klima: ", detailX, detailY);
+    setBoldFont(display, 28);
+    display.drawString(status, detailX + labelW, detailY);
 }
 
 void drawOutdoorHumidWidget(M5EPD_Canvas& display, const OutdoorData& data) {
@@ -476,12 +484,12 @@ void drawPressureWidget(M5EPD_Canvas& display, const IndoorData& data) {
     drawTrendArrow(display, PRESSURE_X + CARD_TREND_X_OFFSET, PRESSURE_Y + CARD_TREND_Y, data.pressureTrend);
 }
 
-// Helper to draw a small up or down triangle arrow (5px)
+// Helper to draw a small up or down triangle arrow (8px)
 static void drawSmallArrow(M5EPD_Canvas& display, int x, int y, bool isUp) {
     if (isUp) {
-        display.fillTriangle(x, y + 5, x + 5, y, x + 10, y + 5, 15);
+        display.fillTriangle(x, y + 8, x + 6, y, x + 12, y + 8, 15);
     } else {
-        display.fillTriangle(x, y, x + 5, y + 5, x + 10, y, 15);
+        display.fillTriangle(x, y, x + 6, y + 8, x + 12, y, 15);
     }
 }
 
@@ -650,15 +658,15 @@ void drawForecastWidget(M5EPD_Canvas& display, const ForecastData& forecast) {
         snprintf(maxStr, sizeof(maxStr), "%d", df.tempMax);
 
         // Down arrow (min)
-        drawSmallArrow(display, rangeX + 3, rangeY + 6, false);
+        drawSmallArrow(display, rangeX, rangeY + 5, false);
         setRegularFont(display, 24);
         display.setTextDatum(TL_DATUM);
-        int w = display.drawString(minStr, rangeX + 10, rangeY);
+        int w = display.drawString(minStr, rangeX + 14, rangeY);
         // Up arrow (max)
-        drawSmallArrow(display, rangeX + 10 + w + 5, rangeY + 2, true);
+        drawSmallArrow(display, rangeX + 14 + w + 4, rangeY + 1, true);
         char maxUnit[12];
         snprintf(maxUnit, sizeof(maxUnit), "%s°C", maxStr);
-        display.drawString(maxUnit, rangeX + 10 + w + 14, rangeY);
+        display.drawString(maxUnit, rangeX + 14 + w + 18, rangeY);
     }
 }
 

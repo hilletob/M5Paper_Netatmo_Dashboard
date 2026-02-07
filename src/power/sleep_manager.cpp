@@ -83,10 +83,25 @@ time_t SleepManager::readHardwareRtc() {
     timeinfo.tm_hour = rtcTime.hour;
     timeinfo.tm_min = rtcTime.min;
     timeinfo.tm_sec = rtcTime.sec;
+    timeinfo.tm_isdst = 0;
+
+    // Hardware RTC stores UTC. mktime() interprets input as local time,
+    // which produces a wrong epoch when TZ is set (e.g. CET = 1h off).
+    // Force UTC for the conversion, then restore the original TZ.
+    const char* savedTZ = getenv("TZ");
+    setenv("TZ", "UTC0", 1);
+    tzset();
 
     time_t epoch = mktime(&timeinfo);
 
-    ESP_LOGD("sleep", "Hardware RTC read: %04d-%02d-%02d %02d:%02d:%02d (epoch=%ld)",
+    if (savedTZ) {
+        setenv("TZ", savedTZ, 1);
+    } else {
+        unsetenv("TZ");
+    }
+    tzset();
+
+    ESP_LOGD("sleep", "Hardware RTC read: %04d-%02d-%02d %02d:%02d:%02d UTC (epoch=%ld)",
              rtcDate.year, rtcDate.mon, rtcDate.day,
              rtcTime.hour, rtcTime.min, rtcTime.sec, epoch);
 
