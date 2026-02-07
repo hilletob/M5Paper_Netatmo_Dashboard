@@ -62,9 +62,6 @@
 #ifndef MAXIMUM_SLEEP_SEC
 #define MAXIMUM_SLEEP_SEC 900  // Maximum 15 minutes between updates
 #endif
-#ifndef RTC_ALARM_THRESHOLD_SEC
-#define RTC_ALARM_THRESHOLD_SEC 255  // Above this, use RTC alarm instead of duration-based wake
-#endif
 
 // Hardware Configuration
 #ifndef BATTERY_PIN

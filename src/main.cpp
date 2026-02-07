@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <time.h>
-#include <sys/time.h>
 #include <M5EPD.h>
 #include "config.h"
 
@@ -82,14 +81,6 @@ void setup() {
     setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
     tzset();
     ESP_LOGI("main", "Timezone configured: CET/CEST");
-
-    // Set system clock from hardware RTC (ensures time(nullptr) works on wakes without NTP)
-    time_t rtcEpoch = SleepManager::getEpoch();
-    if (rtcEpoch > 1700000000) {
-        struct timeval tv = { rtcEpoch, 0 };
-        settimeofday(&tv, NULL);
-        ESP_LOGI("main", "System clock set from hardware RTC");
-    }
 
     // Show loading screen only on first boot; keep last display on subsequent wakes
     if (SleepManager::getWakeCount() == 1) {
