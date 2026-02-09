@@ -312,47 +312,35 @@ void updateDisplay(const DashboardData& data) {
 }
 
 unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate, bool& isFallback) {
-    time_t now = SleepManager::getEpoch();
-    time_t nextWake = 0;
+    time_t now = time(nullptr);
     isFallback = false;
 
     if (netatmoLastUpdate == 0) {
-        ESP_LOGW("sleep", "No Netatmo timestamp - using fallback sleep (%d sec)", FALLBACK_SLEEP_SEC);
-        nextWake = now + FALLBACK_SLEEP_SEC;
+        // No data at all — full fallback
+        ESP_LOGW("sleep", "No Netatmo timestamp, fallback %d sec", FALLBACK_SLEEP_SEC);
         isFallback = true;
-    } else {
-        // Wake UPDATE_INTERVAL_SEC after Netatmo's last measurement
-        nextWake = netatmoLastUpdate + UPDATE_INTERVAL_SEC;
-
-        if (nextWake > now) {
-            ESP_LOGI("sleep", "Last Netatmo update: %lu, next wake: %lu (%ld sec from now)",
-                    netatmoLastUpdate, nextWake, (long)(nextWake - now));
-        } else {
-            // Data is overdue — sleep minimum and retry
-            long overdueSeconds = now - nextWake;
-            ESP_LOGW("sleep", "Data overdue by %ld sec, sleeping %d sec", overdueSeconds, MINIMUM_SLEEP_SEC);
-            nextWake = now + MINIMUM_SLEEP_SEC;
-            isFallback = true;
-        }
+        return now + FALLBACK_SLEEP_SEC;
     }
 
-    return nextWake;
+    time_t candidate = netatmoLastUpdate + UPDATE_INTERVAL_SEC;
+
+    if (candidate > now) {
+        // Normal case: wake 11 min after last Netatmo update
+        ESP_LOGI("sleep", "Next wake in %ld sec (11 min after Netatmo update)", (long)(candidate - now));
+        return candidate;
+    }
+
+    // Data is stale (candidate is in the past) — short retry
+    ESP_LOGW("sleep", "Data stale by %ld sec, retrying in %d sec", (long)(now - candidate), MINIMUM_SLEEP_SEC);
+    isFallback = true;
+    return now + MINIMUM_SLEEP_SEC;
 }
 
 void enterSleep(unsigned long nextWakeTime) {
-    time_t now = SleepManager::getEpoch();
+    time_t now = time(nullptr);
     long sleepSeconds = (long)nextWakeTime - (long)now;
+    if (sleepSeconds < MINIMUM_SLEEP_SEC) sleepSeconds = MINIMUM_SLEEP_SEC;
 
-    if (sleepSeconds < MINIMUM_SLEEP_SEC) {
-        sleepSeconds = MINIMUM_SLEEP_SEC;
-    }
-
-    ESP_LOGI("main", "=== Update cycle complete ===");
-    ESP_LOGI("main", "Sleeping for %ld seconds (%ld minutes)",
-            sleepSeconds, sleepSeconds / 60);
-    ESP_LOGI("main", "Free heap: %u bytes, Min free: %u bytes",
-            ESP.getFreeHeap(), ESP.getMinFreeHeap());
-
-    // Enter deep sleep until absolute target time
+    ESP_LOGI("main", "=== Sleeping %ld sec (%ld min) ===", sleepSeconds, sleepSeconds / 60);
     SleepManager::deepSleepUntil((time_t)nextWakeTime);
 }

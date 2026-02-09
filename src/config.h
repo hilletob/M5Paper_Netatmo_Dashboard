@@ -57,7 +57,7 @@
 #define FALLBACK_SLEEP_SEC 660  // Sleep duration when no Netatmo timestamp available
 #endif
 #ifndef MINIMUM_SLEEP_SEC
-#define MINIMUM_SLEEP_SEC 120  // Minimum 2 minutes between updates
+#define MINIMUM_SLEEP_SEC 60   // Minimum 1 minute between updates (matches reference project)
 #endif
 #ifndef MAXIMUM_SLEEP_SEC
 #define MAXIMUM_SLEEP_SEC 900  // Maximum 15 minutes between updates

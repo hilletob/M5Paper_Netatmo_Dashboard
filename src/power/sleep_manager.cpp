@@ -145,19 +145,13 @@ void SleepManager::init() {
 
 void SleepManager::deepSleepUntil(time_t targetEpoch) {
     time_t now = time(nullptr);
-    uint32_t seconds = 0;
-
-    if (targetEpoch > now) {
-        seconds = targetEpoch - now;
-    } else {
-        seconds = MINIMUM_SLEEP_SEC;
-    }
+    int32_t seconds = (targetEpoch > now) ? (targetEpoch - now) : MINIMUM_SLEEP_SEC;
 
     // Clamp
     if (seconds < MINIMUM_SLEEP_SEC) seconds = MINIMUM_SLEEP_SEC;
     if (seconds > MAXIMUM_SLEEP_SEC) seconds = MAXIMUM_SLEEP_SEC;
 
-    ESP_LOGI("sleep", "Entering deep sleep for %u seconds (%u min)", seconds, seconds / 60);
+    ESP_LOGI("sleep", "Entering deep sleep for %d seconds (%d min)", seconds, seconds / 60);
 
     // Save state to LittleFS before shutdown
     saveState();
@@ -171,17 +165,32 @@ void SleepManager::deepSleepUntil(time_t targetEpoch) {
     Serial.flush();
     delay(100);
 
-    // Simple duration-based shutdown via BM8563 timer
-    M5.shutdown(seconds);
+    // Give screen time to finish (reference project pattern)
+    delay(1000);
 
-    // If M5.shutdown() returns (shouldn't happen), try ESP32 deep sleep as fallback
-    ESP_LOGW("sleep", "M5.shutdown returned unexpectedly, using ESP32 deep sleep");
-    M5.EPD.Sleep();
-    delay(500);
+    if (seconds < 255) {
+        // Short sleep: use BM8563 timer at second precision
+        // -1 to account for the delay above
+        ESP_LOGI("sleep", "Using BM8563 timer (%d sec)", seconds - 1);
+        M5.shutdown(seconds - 1);
+    } else {
+        // Long sleep: use RTC alarm at specific UTC time (more reliable than
+        // minute-resolution timer which kicks in above 255 seconds)
+        // time(nullptr) returns correct UTC, gmtime converts to UTC clock time,
+        // hardware RTC runs in UTC — so alarm fires at the right moment
+        struct tm tmInfo;
+        gmtime_r(&targetEpoch, &tmInfo);
+        rtc_time_t rtcTime;
+        rtcTime.hour = tmInfo.tm_hour;
+        rtcTime.min = tmInfo.tm_min;
+        rtcTime.sec = tmInfo.tm_sec;
+        ESP_LOGI("sleep", "RTC alarm set for %02d:%02d:%02d UTC", rtcTime.hour, rtcTime.min, rtcTime.sec);
+        M5.shutdown(RTC_Date(-1, -1, -1, -1), rtcTime);
+    }
 
-    uint64_t sleep_us = (uint64_t)seconds * 1000000ULL;
-    esp_sleep_enable_timer_wakeup(sleep_us);
-    esp_deep_sleep_start();
+    // Fallback if M5.shutdown returns (USB connected during development)
+    ESP_LOGW("sleep", "M5.shutdown returned, falling back to esp_deep_sleep");
+    esp_deep_sleep((seconds - 1) * (uint64_t)1000000);
 }
 
 void SleepManager::deepSleep(uint32_t seconds) {
