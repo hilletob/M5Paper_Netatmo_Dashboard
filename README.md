@@ -1,368 +1,128 @@
-# ESP32 Weather Dashboard
+# M5Paper Weather Dashboard
 
-A weather dashboard for XIAO ESP32-C3 with 7.5" ePaper display that shows indoor/outdoor climate data from Netatmo and weather forecasts from MeteoSwiss (Open-Meteo).
+A weather dashboard for M5Paper (ESP32 + 4.7" ePaper) that displays indoor/outdoor climate data from Netatmo and 3-day weather forecasts from met.no.
 
-![Weather Dashboard](docs/IMG_3327.jpeg)
+![Weather Dashboard](docs/IMG_3600.jpeg)
 
 ## Features
 
-- **Netatmo Integration**: Indoor temperature, humidity, CO2, pressure with trends
-- **Outdoor Monitoring**: Temperature, humidity, min/max values
-- **Weather Forecast**: 3-day forecast from met.no (yr.no) API with fixed time slots (06h, 12h, 18h)
-- **Gemini AI Widget**: Context-aware weather commentary with dry humor and conditional hints
-- **Smart CO2 Trends**: Calculated from cached measurements (10 ppm threshold)
-- **Power Efficient**: Deep sleep between updates, 1+ week battery life
-- **Smart Scheduling**: Updates 11 minutes after Netatmo's update cycle
-- **Offline Capable**: LittleFS cache for operation without WiFi
-- **Battery Monitoring**: Real-time battery voltage and percentage
+- **Netatmo Integration**: Indoor/outdoor temperature, humidity, CO2, pressure with trend arrows
+- **Weather Forecast**: 3-day forecast from met.no API with 4 time slots (06h, 12h, 18h, 00h), weather icons, precipitation and min/max temperatures
+- **Smart Scheduling**: Wakes 11 minutes after Netatmo's update cycle, uses RTC alarm for reliable wake-up
+- **Power Efficient**: Deep sleep between updates, battery monitoring with voltage/percentage display
+- **Offline Capable**: LittleFS cache for operation when WiFi is unavailable
+- **TTF Fonts**: Liberation Sans (regular + bold) rendered via M5EPD's TTF engine for clean typography
 
-## Hardware Requirements
+## Hardware
 
-- **MCU**: Seeed Studio XIAO ESP32-C3
-- **Display**: Seeed Studio 7.5" ePaper Display (800x480, monochrome)
-- **Battery**: 3.7V LiPo (recommended: 2000-3000mAh)
-- **Voltage Divider**: 2x 200kΩ resistors (for battery monitoring)
+- **M5Paper**: ESP32-D0WDQ6 + 4.7" ePaper (540x960), built-in RTC (BM8563), 8MB PSRAM
+- **Battery**: Built-in 1150mAh LiPo (or external 3.7V LiPo)
 
-## Software Requirements
+## Quick Start
 
-- **PlatformIO**: For building and uploading firmware
-- **Arduino Framework**: ESP32 Arduino Core
+### 1. Configure credentials
+
+Copy the template and fill in your credentials:
+
+```bash
+cp src/config.h src/config.local.h
+```
+
+Edit `src/config.local.h`:
+
+```cpp
+#define WIFI_SSID "YourNetwork"
+#define WIFI_PASSWORD "YourPassword"
+
+#define NETATMO_CLIENT_ID "your_client_id"
+#define NETATMO_CLIENT_SECRET "your_secret"
+#define NETATMO_REFRESH_TOKEN "your_refresh_token"
+
+#define NETATMO_DEVICE_ID "70:ee:50:xx:xx:xx"
+#define LOCATION_LAT 47.0647
+#define LOCATION_LON 8.3069
+#define LOCATION_NAME "Luzern"
+```
+
+### 2. Build and flash
+
+```bash
+pio run                    # Build firmware
+pio run --target upload    # Flash to M5Paper
+pio device monitor         # Serial console (115200 baud)
+```
 
 ## Project Structure
 
 ```
-esp32Netatmo/
-├── platformio.ini              # Build configuration
-├── src/
-│   ├── main.cpp                # Main program
-│   ├── config.h                # Default configuration
-│   ├── config.local.h          # User credentials (gitignored)
-│   ├── api/                    # API clients
-│   │   ├── netatmo_client.cpp
-│   │   ├── meteo_client.cpp
-│   │   ├── gemini_client.cpp
-│   │   └── http_utils.h
-│   ├── display/                # Display widgets
-│   │   ├── widgets.cpp
-│   │   ├── layout.h
-│   │   └── fonts.h
-│   ├── data/                   # Data structures & cache
-│   │   ├── weather_data.h
-│   │   └── cache.cpp
-│   └── power/                  # Power management
-│       ├── sleep_manager.cpp
-│       └── battery.cpp
-└── include/
-    └── driver.h                # Display driver config
+src/
+├── main.cpp                # Orchestration: WiFi, NTP, APIs, display, sleep
+├── config.h                # Default configuration
+├── config.local.h          # User credentials (gitignored)
+├── api/
+│   ├── netatmo_client.cpp  # Netatmo OAuth2 + weather data
+│   ├── meteo_client.cpp    # met.no forecast API
+│   └── http_utils.h        # Shared HTTP/retry logic
+├── display/
+│   ├── widgets.cpp         # Card rendering (all dashboard widgets)
+│   ├── layout.h            # Coordinates and sizing constants
+│   ├── icons.cpp           # Weather condition icons
+│   └── fonts.h             # TTF font helpers
+├── data/
+│   ├── weather_data.h      # All data structures
+│   └── cache.cpp           # LittleFS JSON persistence
+└── power/
+    ├── sleep_manager.cpp   # Deep sleep scheduling (RTC alarm + timer)
+    └── battery.cpp         # Voltage to percentage mapping
 ```
 
-## Setup Instructions
+## How It Works
 
-### 1. Install PlatformIO
-
-If you haven't already:
-```bash
-# Using VSCode
-# Install PlatformIO IDE extension
-
-# Or using CLI
-pip install platformio
+```
+setup() -> Hardware init -> WiFi -> NTP sync -> Fetch APIs -> Cache to LittleFS -> Render -> Deep sleep
 ```
 
-### 2. Clone and Configure
+The device runs in single-shot mode: `setup()` does everything, `loop()` never executes. After rendering the display, it calculates the next wake time (11 minutes after Netatmo's last update) and enters deep sleep.
 
-```bash
-cd /Users/tobiastschopp/Sites/esp32Netatmo
-```
-
-The `config.local.h` file has already been created with your credentials:
-- WiFi SSID: `2p4Dischma19`
-- WiFi Password: (configured)
-- Netatmo Client ID, Secret, and Refresh Token: (configured)
-- Default Station: Davos (Grialetschhüsli)
-
-### 3. Build and Upload
-
-```bash
-# Build the project
-pio run
-
-# Upload to ESP32
-pio run --target upload
-
-# Monitor serial output
-pio device monitor
-```
-
-## Configuration
-
-### WiFi Settings
-Edit `src/config.local.h`:
-```cpp
-#define WIFI_SSID "YourNetworkName"
-#define WIFI_PASSWORD "YourPassword"
-```
-
-### Netatmo API
-Already configured with your credentials. If you need to change:
-```cpp
-#define NETATMO_CLIENT_ID "your_client_id"
-#define NETATMO_CLIENT_SECRET "your_secret"
-#define NETATMO_REFRESH_TOKEN "your_refresh_token"
-```
-
-### Gemini AI API
-Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey):
-```cpp
-#define GEMINI_API_KEY "your-api-key-here"
-```
-
-**Free Tier Limits**:
-- 15 requests per minute
-- 1,500 requests per day
-- Our usage: ~130 requests/day (well within limits)
-
-### Station Selection
-To change from Davos to another station:
-```cpp
-// Luzern
-#define NETATMO_DEVICE_ID "70:ee:50:15:fc:4e"
-#define LOCATION_LAT 47.0647
-#define LOCATION_LON 8.3069
-#define LOCATION_NAME "Luzern"
-
-// Waltenschwil
-#define NETATMO_DEVICE_ID "70:ee:50:36:cd:82"
-#define LOCATION_LAT 47.3923
-#define LOCATION_LON 8.2917
-#define LOCATION_NAME "Waltenschwil"
-```
-
-### Update Interval
-Default is 11 minutes after Netatmo update. To change:
-```cpp
-#define UPDATE_INTERVAL_MIN 11  // minutes
-```
+**Sleep strategy**: For sleeps < 255 seconds, the BM8563 timer is used at second precision. For longer sleeps, an RTC alarm is set at a specific UTC time (the timer switches to unreliable minute resolution above 255s).
 
 ## Display Layout
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Davos                           26.12.2025 14:30            │
-├──────────────┬──────────────┬────────────────────────────────┤
-│ INDOOR       │ OUTDOOR      │ ┌─────────────────────────┐   │
-│ Temp  23.5°C ↑│ Temp  12.3°C ↓│ │ Heute                   │   │
-│ Humid 45%    │ Humid 65%    │ │ [☀] -9/1°C              │   │
-│ CO2   850ppm ↓│              │ │ [icons] [temp] [precip] │   │
-│ Press 1015   │ AI WIDGET:   │ └─────────────────────────┘   │
-│              │ "Draussen    │ ┌─────────────────────────┐   │
-│              │ kalt, drinnen│ │ Morgen                  │   │
-│              │ gemuetlich!" │ │ [☁] -10/4°C             │   │
-│              │              │ │ [icons] [temp] [precip] │   │
-│              │              │ └─────────────────────────┘   │
-│              │              │ ┌─────────────────────────┐   │
-│              │              │ │ Uebermorgen             │   │
-│              │              │ │ [⛅] -6/5°C              │   │
-│              │              │ │ [icons] [temp] [precip] │   │
-│              │              │ └─────────────────────────┘   │
-└──────────────┴──────────────┴────────────────────────────────┘
-```
+The 540x960 portrait display shows:
 
-**3-Column Layout**:
-- **Column 1 (Indoor)**: Temperature, Humidity, CO2 (calculated trend), Pressure
-- **Column 2 (Outdoor + AI)**: Temperature, Humidity, Gemini AI commentary
-- **Column 3 (Forecast)**: 3 individual cards (Heute, Morgen, Uebermorgen)
+| Widget | Content |
+|--------|---------|
+| **Header** | Location name, last update time, next wake time |
+| **Temperature** | Indoor/outdoor current temp with trend arrows, daily min/max with timestamps |
+| **Humidity** | Indoor (with comfort label) / outdoor (with dew point) |
+| **Air Quality** | CO2 (ppm) with trend arrow / barometric pressure (hPa) with trend arrow |
+| **Forecast** | 3-day forecast: weather icons, temperatures per time slot, precipitation, daily min/max |
+| **Battery** | Icon, percentage, voltage, charge state |
 
-**Forecast Widget Features** (updated 2025-12-26):
-- Individual section borders with 8px gaps (matching column spacing)
-- Fixed time slots: 06h, 12h, 18h (shown even if in the past)
-- Historical placeholders: Shows "-" for past times without data
-- Compact layout: Removed time labels to save space
-- Always shows precipitation with "mm" unit
-- Custom degree symbols (°C) matching other widgets
-- Equal heights: 128px, 127px, 127px for optimal space utilization
+## Configuration
 
-## Power Management
+Key settings in `src/config.h` (override in `config.local.h`):
 
-### Deep Sleep Strategy
-- Updates every 11 minutes after Netatmo's data refresh
-- WiFi only enabled during updates
-- Display powered off between updates
-- Expected battery life: 1-2 weeks (2000mAh battery)
-
-### Battery Monitoring
-- Real-time voltage and percentage display
-- Low battery warnings
-- Voltage range: 3.3V (0%) to 4.35V (100%)
-
-## Font System
-
-### FreeFonts Limitations
-
-The dashboard uses FreeFonts from Seeed_GFX which only support ASCII characters (0x20-0x7E). This means:
-- **No German umlauts**: ä, ö, ü displayed as "ae", "oe", "ue"
-- **No degree symbol**: Custom-drawn using circles instead
-
-### Custom Degree Symbol
-
-Temperature displays use a custom rendering approach that:
-1. Renders the numeric value (e.g., "18.3")
-2. Draws the degree symbol as two concentric circles (radius 2 and 3)
-3. Adds "C" after the symbol with 4px spacing before the degree symbol
-4. Result: "18.3 °C" with proper readability
-
-**Used in**:
-- Indoor/Outdoor current temperatures (`drawTemperature()` helper)
-- Indoor/Outdoor min/max temperatures (inline rendering)
-- 3-day forecast temperatures (all 3 time slots per day)
-
-**Note**: We attempted migration to U8g2 fonts for UTF-8 support but encountered rendering issues with 1-bit sprite buffers. FreeFonts remain the stable solution.
-
-### Font Styling and Units
-
-**Visual hierarchy** (updated 2025-12-27):
-- **Values**: Bold font (FSSB18, FSSB12, FSSB9) for emphasis
-- **Units**: Non-bold font (FSS18, FSS12, FSS9) for subtle appearance
-- **Spacing**: 4px between value and unit
-
-**Examples**:
-- Temperature: **18.3** °C (value bold, degree symbol + C non-bold)
-- Humidity: **65** % (value bold, % non-bold)
-- CO2: **850** ppm (value bold, ppm non-bold)
-- Pressure: **1015** hPa (value bold, hPa non-bold)
-- Dew Point: **12.3** °C (value bold, °C non-bold)
-- Precipitation: **2.5** mm (value bold, mm non-bold with space)
-
-## Troubleshooting
-
-### Display Issues
-
-**Problem**: Display shows corrupted data or freezes
-
-**Solution**: The Seeed_GFX library requires `display.begin()` before each `update()`. This is already implemented in the code.
-
-**Problem**: Display update takes very long (>30 seconds)
-
-**Solution**: Normal ePaper refresh takes 15-20 seconds. Watchdog is disabled automatically.
-
-**Problem**: Text doesn't render or appears garbled
-
-**Solution**: Ensure FreeFonts are being used. U8g2 fonts are incompatible with the 1-bit sprite buffer used by the ePaper display.
-
-### WiFi Issues
-
-**Problem**: Cannot connect to WiFi
-
-**Solutions**:
-1. Check SSID and password in `config.local.h`
-2. Ensure WiFi is 2.4GHz (ESP32-C3 doesn't support 5GHz)
-3. Check signal strength (RSSI logged in serial output)
-
-### API Issues
-
-**Problem**: Netatmo API returns errors
-
-**Solutions**:
-1. Verify credentials in `config.local.h`
-2. Check if refresh token is still valid
-3. Monitor serial output for detailed error messages
-4. Cached data will be used if API fails
-
-**Problem**: No forecast data
-
-**Solution**: MeteoSwiss API (Open-Meteo) is free and doesn't require authentication. Check coordinates are correct for your location.
-
-### Memory Issues
-
-**Problem**: ESP32 reboots or crashes
-
-**Solutions**:
-1. Check free heap in serial output
-2. ESP32-C3 has limited RAM (400KB)
-3. Reduce JSON buffer sizes if needed
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `UPDATE_INTERVAL_SEC` | 660 (11 min) | Wake interval after Netatmo update |
+| `MINIMUM_SLEEP_SEC` | 60 | Minimum sleep for stale-data retries |
+| `MAXIMUM_SLEEP_SEC` | 900 (15 min) | Maximum sleep duration |
+| `FALLBACK_SLEEP_SEC` | 660 (11 min) | Sleep when no Netatmo timestamp |
 
 ## Serial Debugging
 
-Connect to serial monitor:
 ```bash
 pio device monitor -b 115200
 ```
 
-Look for these key log messages:
-- `[wifi]` - WiFi connection status
-- `[netatmo]` - API calls and data parsing
-- `[meteo]` - Forecast API calls
-- `[cache]` - Cache operations
-- `[display]` - Display updates
-- `[sleep]` - Sleep/wake cycles
-- `[battery]` - Battery readings
+Log prefixes: `[wifi]` `[netatmo]` `[meteo]` `[cache]` `[display]` `[sleep]` `[battery]`
 
-## Performance Metrics
+## APIs
 
-| Metric | Target | Typical |
-|--------|--------|---------|
-| Boot to Display | < 30s | 20-25s |
-| WiFi Connect | < 10s | 3-5s |
-| API Calls (total) | < 15s | 8-12s |
-| Display Update | 15-20s | 16-18s |
-| Deep Sleep Current | < 100µA | 50-80µA |
-| Battery Life (2000mAh) | > 1 week | 10-14 days |
-
-## API Documentation
-
-### Netatmo API
-- **Base URL**: `https://api.netatmo.com`
-- **Authentication**: OAuth2 refresh token flow
-- **Endpoint**: `/api/getstationsdata`
-- **Rate Limit**: 50 requests per 10 seconds
-- **Data Update**: Every 10 minutes
-
-### met.no (yr.no) API
-- **Base URL**: `https://api.met.no/weatherapi/locationforecast/2.0/compact`
-- **Authentication**: None (requires User-Agent header)
-- **Parameters**: Latitude, Longitude
-- **Update**: Hourly forecasts
-- **Coverage**: Worldwide
-
-### Gemini AI API
-- **Model**: `gemini-2.0-flash-exp`
-- **Base URL**: `https://generativelanguage.googleapis.com/v1beta`
-- **Authentication**: API key in `x-goog-api-key` header
-- **Rate Limit**: 15 req/min, 1500 req/day (free tier)
-- **Response**: Context-aware German weather commentary (max 160 chars)
-- **Timeout**: 30s response timeout, 10s connection timeout (updated 2025-12-27)
-- **Contextual Intelligence** (updated 2025-12-26):
-  - Conditional hints: Only mentions ventilation when CO2 > 1500 ppm
-  - Temperature hints: Only mentions heating when temp < 20°C
-  - Randomization: 50% chance for each hint to prevent repetition
-  - Easter egg: 2% chance for cat mode ("Miau Miau")
-  - Timestamp: Formatted as dd.mm.yyyy hh:mm for time-based deductions
+- **Netatmo**: OAuth2 refresh token flow, `/api/getstationsdata`, updates every ~10 min
+- **met.no**: Free, no auth (requires User-Agent header), worldwide hourly forecasts
 
 ## License
 
-This project is for personal use. Netatmo and Open-Meteo APIs are subject to their respective terms of service.
-
-## Credits
-
-- **Reference Projects**:
-  - Seeed_GFX library for ePaper display
-  - M5Paper_Remote_Dashboard_Seed for XIAO ePaper patterns
-  - netatmo-dashboard for API integration patterns
-
-## Support
-
-For issues or questions:
-1. Check serial output for detailed error messages
-2. Review this README's troubleshooting section
-3. Check configuration in `config.local.h`
-4. Verify API credentials are correct
-
-## Next Steps
-
-After successful deployment:
-1. Monitor battery life over several days
-2. Adjust update interval if needed
-3. Customize widget layout in `src/display/layout.h`
-4. Add additional sensors or data sources
-
-Enjoy your weather dashboard!
+This project is for personal use. Netatmo and met.no APIs are subject to their respective terms of service.
