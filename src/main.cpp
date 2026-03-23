@@ -113,6 +113,10 @@ void setup() {
     DashboardData dashboardData;
     bool dataAvailable = false;
 
+    // Lower CPU frequency for WiFi/API fetch phase (80 MHz is sufficient, saves ~60% dynamic power)
+    setCpuFrequencyMhz(80);
+    ESP_LOGI("main", "CPU frequency set to 80 MHz for WiFi phase");
+
     // Connect WiFi
     if (connectWiFi()) {
         // Sync time if needed
@@ -142,6 +146,10 @@ void setup() {
 
     // CRITICAL: Disconnect WiFi before display operations
     disconnectWiFi();
+
+    // Restore full CPU frequency for ePaper rendering (benefits from 240 MHz)
+    setCpuFrequencyMhz(240);
+    ESP_LOGI("main", "CPU frequency restored to 240 MHz for display phase");
 
     // If fresh data not available, try to load from cache
     if (!dataAvailable) {
@@ -225,7 +233,14 @@ bool connectWiFi() {
 
     Serial.println();
     ESP_LOGI("wifi", "Connected! IP: %s", WiFi.localIP().toString().c_str());
-    ESP_LOGI("wifi", "RSSI: %d dBm", WiFi.RSSI());
+
+    int rssi = WiFi.RSSI();
+    ESP_LOGI("wifi", "RSSI: %d dBm", rssi);
+
+    if (rssi > -60) {
+        WiFi.setTxPower(WIFI_POWER_11dBm);
+        ESP_LOGI("wifi", "Strong signal, TX power capped to 11 dBm");
+    }
 
     return true;
 }
@@ -314,6 +329,23 @@ void updateDisplay(const DashboardData& data) {
 unsigned long calculateNextWakeTime(unsigned long netatmoLastUpdate, bool& isFallback) {
     time_t now = time(nullptr);
     isFallback = false;
+
+    // Night mode: 00:00–05:59 local time → hourly wakes, capped at 06:00
+    struct tm localNow;
+    localtime_r(&now, &localNow);
+    if (localNow.tm_hour >= 0 && localNow.tm_hour < 6) {
+        struct tm wakeTime = localNow;
+        wakeTime.tm_hour += 1;
+        wakeTime.tm_min = 0;
+        wakeTime.tm_sec = 0;
+        if (wakeTime.tm_hour >= 6) {
+            wakeTime.tm_hour = 6;
+        }
+        time_t nightWake = mktime(&wakeTime);
+        ESP_LOGI("sleep", "Night mode: next wake at %02d:%02d local (%ld sec)",
+                 wakeTime.tm_hour, wakeTime.tm_min, (long)(nightWake - now));
+        return nightWake;
+    }
 
     if (netatmoLastUpdate == 0) {
         // No data at all — full fallback
