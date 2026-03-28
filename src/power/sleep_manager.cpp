@@ -161,6 +161,9 @@ void SleepManager::deepSleepUntil(time_t targetEpoch) {
     WiFi.mode(WIFI_OFF);
     delay(100);
 
+    // Drop CPU back to 80 MHz — no need for 240 MHz during sleep entry delays
+    setCpuFrequencyMhz(80);
+
     // Flush serial output before sleeping
     Serial.flush();
     delay(100);

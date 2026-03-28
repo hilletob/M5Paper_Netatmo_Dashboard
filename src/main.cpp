@@ -41,6 +41,9 @@ void setup() {
     Serial.begin(115200);
     delay(1000);  // Wait for serial to stabilize
 
+    // Disable Bluetooth — not used, controller can still draw power if not explicitly stopped
+    btStop();
+
     ESP_LOGI("main", "=== ESP32 Weather Dashboard Starting ===");
     ESP_LOGI("main", "Build date: %s %s", __DATE__, __TIME__);
 
@@ -219,6 +222,7 @@ bool connectWiFi() {
     ESP_LOGI("wifi", "Connecting to WiFi: %s", WIFI_SSID);
 
     WiFi.mode(WIFI_STA);
+    WiFi.setSleep(true);  // Enable modem sleep: radio sleeps between DTIM beacons during HTTP waits
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     unsigned long startTime = millis();
@@ -239,7 +243,12 @@ bool connectWiFi() {
 
     if (rssi > -60) {
         WiFi.setTxPower(WIFI_POWER_11dBm);
-        ESP_LOGI("wifi", "Strong signal, TX power capped to 11 dBm");
+        ESP_LOGI("wifi", "Strong signal (RSSI %d dBm), TX power capped to 11 dBm", rssi);
+    } else if (rssi > -70) {
+        WiFi.setTxPower(WIFI_POWER_15dBm);
+        ESP_LOGI("wifi", "Medium signal (RSSI %d dBm), TX power capped to 15 dBm", rssi);
+    } else {
+        ESP_LOGI("wifi", "Weak signal (RSSI %d dBm), TX power at maximum", rssi);
     }
 
     return true;
